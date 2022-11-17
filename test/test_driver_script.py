@@ -51,17 +51,21 @@ def test__skip_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
     assert "Skipping this stage." in captured.out
 
 
-def test_get_timing_report(ds: DriverScript) -> None:
+def test_get_timing_report(
+    ds: DriverScript,
+    capsys: pytest.CaptureFixture
+) -> None:
     ds.durations = {
         "first": timedelta(hours=1, minutes=2, seconds=3, microseconds=4),
         "second": timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
     }  # yapf: disable
-    report = ds.get_timing_report()
+    ds.console.print(ds.get_timing_report())
+    captured = capsys.readouterr()
     for stage in ds.durations:
-        assert stage in report
+        assert stage in captured.out
     for duration in ds.durations.values():
-        assert str(duration) in report
-    assert "Total" in report
+        assert str(duration) in captured.out
+    assert "Total" in captured.out
 
 
 @pytest.mark.parametrize(

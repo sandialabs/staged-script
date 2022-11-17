@@ -9,6 +9,7 @@ import rich.traceback
 from rich.console import Console
 from rich.padding import Padding
 from rich.panel import Panel
+from rich.table import Table
 
 rich.traceback.install()
 
@@ -165,27 +166,22 @@ class DriverScript:
 
         return decorator
 
-    def get_timing_report(self) -> str:
+    def get_timing_report(self) -> Table:
         """
         Create a report of the durations of all the stages.
 
         Returns:
-            The report, formatted as a Markdown table.
+            The report, formatted as a table.
         """
-        durations = self.durations.copy()
-        total = "Total"
-        durations[total] = datetime.now() - self.start_time
-        stage_width = max(len(stage) for stage in durations)
-        duration_width = len(str(durations[total]))
-        report = (
-            f"| {'Stage':{stage_width}} | {'Duration':{duration_width}} |\n"
-            + "|-" + "-"*stage_width + "-|-" + "-"*duration_width + "-|\n"
+        table = Table(show_footer=True)
+        table.add_column(header="Stage", footer="Total")
+        table.add_column(
+            header="Duration",
+            footer=str(datetime.now() - self.start_time)
         )
-        report += "".join(
-            (f"| {stage:{stage_width}} | {str(duration)} |\n")
-            for stage, duration in durations.items()
-        )  # yapf: disable
-        return report
+        for stage, duration in self.durations.items():
+            table.add_row(stage, str(duration))
+        return table
 
     @staticmethod
     def _current_arg_is_long_flag(args: list[str]) -> bool:
