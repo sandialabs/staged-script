@@ -2,6 +2,7 @@
 import functools
 import re
 import shlex
+from argparse import ArgumentParser
 from datetime import datetime, timedelta
 from typing import Any, Callable
 
@@ -12,6 +13,32 @@ from rich.panel import Panel
 from rich.table import Table
 
 rich.traceback.install()
+
+
+def lazy_property(func: Callable) -> property:
+    """
+    A decorator to make it such that a property is lazily evaluated.
+    When the property is first accessed, the object will not yet have a
+    corresponding attribute, so the value will be computed by executing
+    :arg:`func`.  Any time the property is accessed thereafter, the
+    value will just be retrieved from the object's corresponding
+    attribute.
+
+    Args:
+        func:  The function used to compute the value of the property.
+
+    Returns:
+        The lazy property decorator.
+    """
+    attr_name = f"_lazy_{func.__name__}"
+
+    @property
+    def _lazy_property(self):
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, func(self))
+        return getattr(self, attr_name)
+
+    return _lazy_property
 
 
 class DriverScript:
@@ -35,7 +62,11 @@ class DriverScript:
         stages_to_run (set[str]):  Which stages to run.
         start_time (datetime):  The time at which this object was
             initialized.
+
+    Class Variables:
+        stages (list[str]):  The stages defined for the script.
     """
+    stages: list[str] = []
 
     def __init__(
         self,
@@ -95,6 +126,39 @@ class DriverScript:
             )
         )  # yapf: disable
 
+    @staticmethod
+    def _add_stage(stage_name: str) -> None:
+        """
+        Add a new stage to the list of stages, as long as the stage name
+        is a valid Python identifier.
+
+        Note:
+            The `stages` class variable is conceptually an ordered set,
+            but Python doesn't have support for such a collection, so
+            it's implemented as a value-less `dict` converted to a
+            `list`.
+
+        Todo:
+            It'd be great to raise a ``ValueError`` if the
+            :arg:`stage_name` is already in ``__class__.stages``.  This
+            is possible, but it causes problems with ``pytest``, which
+            will double-import this module in two different scopes---one
+            from the ``__init__.py``, and the other from the test file.
+            I haven't yet figured out a workaround other than to tell
+            the user to ensure they use unique stage names.
+
+        Args:
+            stage_name:  The name of the stage.
+
+        Raises:
+            RuntimeError:  If the stage name is invalid.
+        """
+        if not stage_name.isidentifier():
+            raise ValueError(
+                f"Stage name '{stage_name}' must be a valid Python identifier."
+            )
+        __class__.stages = list(dict.fromkeys(__class__.stages + [stage_name]))
+
     def _begin_stage(self, stage_name: str, heading: str) -> None:
         """
         Execute a series of commands at the beginning of every stage.
@@ -126,9 +190,8 @@ class DriverScript:
         """
         self.console.log("Skipping this stage.")
 
-    @classmethod
+    @staticmethod
     def stage(
-        cls,
         stage_name: str,
         heading: str,
         skip_result: Any = True
@@ -138,12 +201,15 @@ class DriverScript:
         after every stage.
 
         Args:
-            stage_name:  The name of the stage.
+            stage_name:  The name of the stage.  Note that stage names
+                must be unique within a class that inherits from
+                :class:`DriverScript`.
             heading:  A heading message to print indicating what will
                 happen in the stage.
             skip_result:  The result to be returned if the stage is
                 skipped.
         """
+        __class__._add_stage(stage_name)
 
         def decorator(func: Callable) -> Callable:
 
@@ -257,3 +323,52 @@ class DriverScript:
             else:
                 lines.append(f"{args.pop(0)} {self._quote_arg(args.pop(0))}")
         return (" \\\n" + " "*indent).join(lines)
+
+    @lazy_property
+    def parser(self) -> ArgumentParser:
+        """
+        Create an :class:`ArgumentParser` for all the arguments made
+        available by this base class.  This should be overridden in
+        child classes as follows:
+
+        .. code-block:: python
+
+            @lazy_property
+            def parser(self) -> ArgumentParser:
+                ap = super().parser
+                ap.description = '''INSERT DESCRIPTION HERE'''
+                ap.add_argument("--foo", ...)
+                ...
+                # Optional changes.
+                ap.formatter_class = RawDescriptionHelpFormatter
+                ap.set_defaults(stage=self.stages)
+                return ap
+
+        The formatter class can optionally be set to something other
+        than the default, and if you'd like to set the default value for
+        the ``--stage`` argument, you can use :func:`set_defaults` (the
+        example above defaults to running all the stages in the order in
+        which they were defined).
+
+        Returns:
+            The base argument parser.
+        """
+        description = """
+This is the description of the ArgumentParser in the DriverScript base
+class.  This should be overridden in your child class.  See the
+docstring for details.
+"""
+        ap = ArgumentParser(description=description)
+        ap.add_argument(
+            "--stage",
+            choices=self.stages,
+            nargs="+",
+            help="Which stages to run."
+        )
+        ap.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="If specified, don't actually run the commands in the shell; "
+            "instead print the commands that would have been executed."
+        )
+        return ap
