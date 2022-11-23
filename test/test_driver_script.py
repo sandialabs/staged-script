@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import shlex
 from datetime import datetime, timedelta
 
 from rich.console import Console
@@ -93,3 +94,10 @@ def test_pretty_print_command(
     ds: DriverScript
 ) -> None:
     assert ds.pretty_print_command(command) == expected
+
+
+def test_parse_args(ds: DriverScript) -> None:
+    ds.stages = ["first", "second", "third"]
+    ds.parse_args(shlex.split("--dry-run --stage first third"))
+    assert ds.dry_run is True
+    assert ds.stages_to_run == {"first", "third"}

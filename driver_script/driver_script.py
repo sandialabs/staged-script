@@ -2,7 +2,7 @@
 import functools
 import re
 import shlex
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
 from typing import Any, Callable
 
@@ -54,8 +54,13 @@ class DriverScript:
     replicability and easing debugging.
 
     Attributes:
+        args (Namespace):  The parsed command line arguments for the
+            script.
         console (Console):  Used to print rich text to the console.
         current_stage (str):  The name of the stage being run.
+        dry_run (bool):  If ``True``, don't actually run the command
+            that would be executed in the shell; instead just print it
+            out.
         durations (dict[str, timedelta]):  A mapping from stage names to
             how long it took for each to run.
         stage_start_time (datetime):  The time at which a stage began.
@@ -88,11 +93,13 @@ class DriverScript:
             this parent constructor with ``super().__init__()`` and
             optionally pass in any arguments.
         """
+        self.args = Namespace()
         self.console = Console(
             force_terminal=console_force_terminal,
             log_path=console_log_path
         )
         self.current_stage = "CURRENT STAGE NOT SET"
+        self.dry_run = False
         self.durations: dict[str, timedelta] = {}
         self.stage_start_time = datetime.now()
         self.stages_to_run: set[str] = set()
@@ -372,3 +379,26 @@ docstring for details.
             "instead print the commands that would have been executed."
         )
         return ap
+
+    def parse_args(self, argv: list[str]) -> None:
+        """
+        Parse the command line arguments supplied by this base class.
+        This should be overridden in child classes as follows:
+
+        .. code-block:: python
+
+            def parse_args(self, argv: list[str]) -> None:
+                super().parse_args(argv)
+                # Parse additional arguments and store as attributes.
+                self.foo = self.args.foo
+                ...
+                # Ensure supplied arguments are valid, etc.
+                ...
+
+        Args:
+            argv:  The command line arguments used when running this
+                file as a script.
+        """
+        self.args = self.parser.parse_args(argv)
+        self.dry_run = self.args.dry_run
+        self.stages_to_run = set(self.args.stage)
