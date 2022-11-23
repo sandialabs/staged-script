@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import shlex
 from datetime import datetime, timedelta
+from subprocess import CompletedProcess
+from unittest.mock import MagicMock, patch
 
 from rich.console import Console
 from python.driver_script.driver_script.driver_script import DriverScript
@@ -101,3 +103,17 @@ def test_parse_args(ds: DriverScript) -> None:
     ds.parse_args(shlex.split("--dry-run --stage first third"))
     assert ds.dry_run is True
     assert ds.stages_to_run == {"first", "third"}
+
+
+@patch("subprocess.run")
+def test_run(
+    mock_run: MagicMock,
+    ds: DriverScript,
+    capsys: pytest.CaptureFixture
+) -> None:
+    command = "echo 'hello world'"
+    mock_run.return_value = CompletedProcess(args=command, returncode=0)
+    ds.run(command)
+    captured = capsys.readouterr()
+    assert all(_ in captured.out for _ in ["Executing", command])
+    assert command in ds.commands_executed

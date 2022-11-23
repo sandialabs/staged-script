@@ -2,6 +2,7 @@
 import functools
 import re
 import shlex
+import subprocess
 from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
 from typing import Any, Callable
@@ -56,6 +57,8 @@ class DriverScript:
     Attributes:
         args (Namespace):  The parsed command line arguments for the
             script.
+        commands_executed (list[str]):  The commands that were executed
+            in the shell.
         console (Console):  Used to print rich text to the console.
         current_stage (str):  The name of the stage being run.
         dry_run (bool):  If ``True``, don't actually run the command
@@ -94,6 +97,7 @@ class DriverScript:
             optionally pass in any arguments.
         """
         self.args = Namespace()
+        self.commands_executed: list[str] = []
         self.console = Console(
             force_terminal=console_force_terminal,
             log_path=console_log_path
@@ -402,3 +406,29 @@ docstring for details.
         self.args = self.parser.parse_args(argv)
         self.dry_run = self.args.dry_run
         self.stages_to_run = set(self.args.stage)
+
+    def run(
+        self,
+        command: str,
+        pretty_print: bool = False,
+        **kwargs
+    ) -> subprocess.CompletedProcess:
+        """
+        Run a command in the underlying shell.
+
+        Args:
+            command:  The command to be executed.
+            pretty_print:  Whether the command should be
+                "pretty-printed" when storing it in the list of commands
+                executed.
+            kwargs:  Additional keyword arguments to pass on to
+                :func:`subprocess.run`.
+
+        Returns:
+            The result from calling :func:`subprocess.run()`.
+        """
+        self.commands_executed.append(
+            self.pretty_print_command(command) if pretty_print else command
+        )
+        self.console.log(f"Executing:  {command}")
+        return subprocess.run(command, **kwargs)
