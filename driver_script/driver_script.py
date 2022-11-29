@@ -5,7 +5,7 @@ import shlex
 import subprocess
 from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
-from typing import Any, Callable
+from typing import Any, Callable, NamedTuple
 
 import rich.traceback
 from rich.console import Console
@@ -42,6 +42,11 @@ def lazy_property(func: Callable) -> property:
     return _lazy_property
 
 
+class StageDuration(NamedTuple):
+    stage: str
+    duration: timedelta
+
+
 class DriverScript:
     """
     This serves as a base class for any Python scripts intended to drive
@@ -64,8 +69,10 @@ class DriverScript:
         dry_run (bool):  If ``True``, don't actually run the command
             that would be executed in the shell; instead just print it
             out.
-        durations (dict[str, timedelta]):  A mapping from stage names to
-            how long it took for each to run.
+        durations (list[StageDuration]):  A mapping from stage names to
+            how long it took for each to run.  This is implemented as a
+            ``list`` of named tuples instead of as a ``dict`` to allow
+            the flexibility for stages to be run multiple times.
         stage_start_time (datetime):  The time at which a stage began.
         stages_to_run (set[str]):  Which stages to run.
         start_time (datetime):  The time at which this object was
@@ -104,7 +111,7 @@ class DriverScript:
         )
         self.current_stage = "CURRENT STAGE NOT SET"
         self.dry_run = False
-        self.durations: dict[str, timedelta] = {}
+        self.durations: list[StageDuration] = []
         self.stage_start_time = datetime.now()
         self.stages_to_run: set[str] = set()
         self.start_time = datetime.now()
@@ -187,12 +194,12 @@ class DriverScript:
         """
         Execute a series of commands at the end of every stage.
         """
-        self.durations[self.current_stage] = (
-            datetime.now() - self.stage_start_time
-        )  # yapf: disable
+        stage_duration = datetime.now() - self.stage_start_time
+        self.durations.append(
+            StageDuration(self.current_stage, stage_duration)
+        )
         self.console.log(
-            f"`{self.current_stage}` stage duration:  "
-            f"{str(self.durations[self.current_stage])}"
+            f"`{self.current_stage}` stage duration:  {str(stage_duration)}"
         )
 
     def _skip_stage(self) -> None:
@@ -256,8 +263,8 @@ class DriverScript:
             header="Duration",
             footer=str(datetime.now() - self.start_time)
         )
-        for stage, duration in self.durations.items():
-            table.add_row(stage, str(duration))
+        for _ in self.durations:
+            table.add_row(_.stage, str(_.duration))
         return table
 
     @staticmethod

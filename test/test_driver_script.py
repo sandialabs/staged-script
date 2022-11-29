@@ -5,7 +5,10 @@ from subprocess import CompletedProcess
 from unittest.mock import MagicMock, patch
 
 from rich.console import Console
-from python.driver_script.driver_script.driver_script import DriverScript
+from python.driver_script.driver_script.driver_script import (
+    DriverScript,
+    StageDuration
+)
 import pytest
 
 
@@ -43,9 +46,9 @@ def test__end_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
     ds.stage_start_time = datetime.now()
     ds._end_stage()
     captured = capsys.readouterr()
-    assert stage_name in ds.durations
+    assert stage_name in [_.stage for _ in ds.durations]
     assert "duration:" in captured.out
-    assert str(ds.durations[stage_name]) in captured.out
+    assert str(ds.durations[-1].duration) in captured.out
 
 
 def test__skip_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
@@ -58,15 +61,21 @@ def test_get_timing_report(
     ds: DriverScript,
     capsys: pytest.CaptureFixture
 ) -> None:
-    ds.durations = {
-        "first": timedelta(hours=1, minutes=2, seconds=3, microseconds=4),
-        "second": timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
-    }  # yapf: disable
+    ds.durations = [
+        StageDuration(
+            "first",
+            timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
+        ),
+        StageDuration(
+            "second",
+            timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
+        )
+    ]  # yapf: disable
     ds.console.print(ds.get_timing_report())
     captured = capsys.readouterr()
-    for stage in ds.durations:
+    for stage in [_.stage for _ in ds.durations]:
         assert stage in captured.out
-    for duration in ds.durations.values():
+    for duration in [_.duration for _ in ds.durations]:
         assert str(duration) in captured.out
     assert "Total" in captured.out
 
