@@ -126,3 +126,47 @@ def test_run(
     captured = capsys.readouterr()
     assert all(_ in captured.out for _ in ["Executing", command])
     assert command in ds.commands_executed
+
+
+@patch(
+    "reverse_argparse.ReverseArgumentParser."
+    "get_pretty_command_line_invocation"
+)
+def test_print_script_execution_summary(
+    mock_get_pretty_command_line_invocation: MagicMock,
+    ds: DriverScript,
+    capsys: pytest.CaptureFixture
+) -> None:
+    mock_get_pretty_command_line_invocation.return_value = (
+        "command line invocation"
+    )
+    ds.durations = [
+        StageDuration(
+            "first",
+            timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
+        ),
+        StageDuration(
+            "second",
+            timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
+        )
+    ]  # yapf: disable
+    ds.commands_executed = ["foo", "bar", "baz"]
+    extras = {
+        "More information": "Additional details.",
+        "Another section": "With still more information."
+    }
+    ds.print_script_execution_summary(extra_sections=extras)
+    captured = capsys.readouterr()
+    headings = (
+        ["Ran the following", "Commands executed", "Timing results"]
+        + list(extras.keys())
+    )  # yapf: disable
+    details = (
+        [mock_get_pretty_command_line_invocation.return_value]
+        + ds.commands_executed
+        + [_.stage for _ in ds.durations]
+        + [str(_.duration) for _ in ds.durations]
+        + list(extras.values())
+    )  # yapf: disable
+    for item in headings + details:
+        assert item in captured.out

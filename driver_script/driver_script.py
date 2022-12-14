@@ -3,15 +3,21 @@ import functools
 import re
 import shlex
 import subprocess
+import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any, Callable, NamedTuple
 
+import __main__
 import rich.traceback
-from rich.console import Console
+from rich.console import Console, Group
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.table import Table
+
+sys.path.append(str(Path(__file__).resolve().parents[3] / "python"))
+from reverse_argparse import ReverseArgumentParser  # noqa: E402
 
 rich.traceback.install()
 
@@ -197,7 +203,7 @@ class DriverScript:
         stage_duration = datetime.now() - self.stage_start_time
         self.durations.append(
             StageDuration(self.current_stage, stage_duration)
-        )
+        )  # yapf: disable
         self.console.log(
             f"`{self.current_stage}` stage duration:  {str(stage_duration)}"
         )
@@ -439,3 +445,52 @@ docstring for details.
         )
         self.console.log(f"Executing:  {command}")
         return subprocess.run(command, **kwargs)
+
+    def print_script_execution_summary(
+        self,
+        extra_sections: dict[str, str] | None = None
+    ) -> None:  # yapf: disable
+        """
+        Print a summary of everything that was done by the script.
+
+        Args:
+            extra_sections:  Any sections to add to the summary in
+                addition to what's automatically supplied by this base
+                class.  The keys are section headings, and values are
+                the associated details.  If you provide section headings
+                identical to any supplied by this base class, the
+                corresponding details will override that which is
+                provided by default.
+
+        Note:  If you wish to override this in a child class for the
+        sake of providing additional sections every time it's called,
+        you can do something like the following:
+
+        .. code-block:: python
+
+            def print_script_execution_summary(
+                self,
+                extra_sections: dict[str, str] | None = None
+            ) -> None:
+                extras = {"Additional section": "With some details."}
+                if extra_sections is not None:
+                    extras.update(extra_sections)
+                super().print_script_execution_summary(
+                    extra_sections=extras
+                )
+        """
+        unparser = ReverseArgumentParser(self.parser, self.args)
+        sections = {
+            "Ran the following": unparser.get_pretty_command_line_invocation(),
+            "Commands executed": "\n".join(self.commands_executed),
+            "Timing results": self.get_timing_report()
+        }
+        if extra_sections is not None:
+            sections.update(extra_sections)
+        items = [""]
+        for section, details in sections.items():
+            items.extend([f"➤ {section}:", Padding(details, (1, 0, 1, 4))])
+        title = f"{Path(__main__.__file__).name} Script Execution Summary"
+        self.console.rule(title)
+        self.console.log(Group(*items))
+        self.console.rule(f"End {title}")
