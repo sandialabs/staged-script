@@ -193,6 +193,12 @@ class DriverScript:
             )
         __class__.stages = list(dict.fromkeys(__class__.stages + [stage_name]))
 
+    def _run_pre_stage_actions(self) -> None:
+        """
+        TODO:  INSERT DOCSTRING.
+        """
+        pass
+
     def _begin_stage(self, stage_name: str, heading: str) -> None:
         """
         Execute a series of commands at the beginning of every stage.
@@ -234,6 +240,8 @@ class DriverScript:
         A decorator to automatically run a series of commands before and
         after every stage.
 
+        TODO:  UPDATE DOCSTRING.
+
         Args:
             stage_name:  The name of the stage.  Note that stage names
                 must be unique within a class that inherits from
@@ -247,10 +255,22 @@ class DriverScript:
 
         def decorator(func: Callable) -> Callable:
 
+            def run_pre_stage_phase(self) -> None:
+                run_custom_pre_stage_actions = getattr(
+                    self,
+                    f"_run_pre_{stage_name}_stage_actions",
+                    False
+                )
+                if run_custom_pre_stage_actions:
+                    run_custom_pre_stage_actions()
+                else:
+                    self._run_pre_stage_actions()
+
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> Any:
-                self._begin_stage(stage_name, heading)
+                run_pre_stage_phase(self)
                 try:
+                    self._begin_stage(stage_name, heading)
                     if stage_name in self.stages_to_run:
                         result = func(self, *args, **kwargs)
                     else:
