@@ -287,6 +287,17 @@ class DriverScript:
                 else:
                     self._begin_stage(stage_name, heading)
 
+            def run_end_stage_phase(self) -> None:
+                run_custom_end_stage_actions = getattr(
+                    self,
+                    f"_end_{stage_name}_stage",
+                    False
+                )
+                if run_custom_end_stage_actions:
+                    run_custom_end_stage_actions()
+                else:
+                    self._end_stage()
+
             def run_post_stage_phase(self) -> None:
                 run_custom_post_stage_actions = getattr(
                     self,
@@ -310,7 +321,7 @@ class DriverScript:
                         result = skip_result
                     return result
                 finally:
-                    self._end_stage()
+                    run_end_stage_phase(self)
                     run_post_stage_phase(self)
 
             return wrapper
