@@ -266,11 +266,26 @@ class DriverScript:
                 else:
                     self._run_pre_stage_actions()
 
+            def run_begin_stage_phase(
+                self,
+                stage_name: str,
+                heading: str
+            ) -> None:
+                run_custom_begin_stage_actions = getattr(
+                    self,
+                    f"_begin_{stage_name}_stage",
+                    False
+                )
+                if run_custom_begin_stage_actions:
+                    run_custom_begin_stage_actions()
+                else:
+                    self._begin_stage(stage_name, heading)
+
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> Any:
                 run_pre_stage_phase(self)
                 try:
-                    self._begin_stage(stage_name, heading)
+                    run_begin_stage_phase(self, stage_name, heading)
                     if stage_name in self.stages_to_run:
                         result = func(self, *args, **kwargs)
                     else:

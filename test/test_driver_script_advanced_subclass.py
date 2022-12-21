@@ -12,12 +12,17 @@ class MyAdvancedScript(DriverScript):
     def _run_pre_stage_actions(self) -> None:
         print("inside '_run_pre_stage_actions' function")
 
+    def _begin_stage(self, stage_name: str, heading: str) -> None:
+        print("inside '_begin_stage' function")
 
+
+@pytest.mark.parametrize("custom_begin_stage", [True, False])
 @pytest.mark.parametrize("custom_pre_stage", [True, False])
 @pytest.mark.parametrize("stages_to_run", [{"test"}, set()])
 def test_stage(
     stages_to_run: set[str],
     custom_pre_stage: bool,
+    custom_begin_stage: bool,
     capsys: pytest.CaptureFixture
 ) -> None:
     script = MyAdvancedScript()
@@ -25,6 +30,10 @@ def test_stage(
     if custom_pre_stage:
         script._run_pre_test_stage_actions = (
             lambda: print("inside '_run_pre_test_stage_actions' function")
+        )
+    if custom_begin_stage:
+        script._begin_test_stage = (
+            lambda: print("inside '_begin_test_stage' function")
         )
     script.run_test()
     captured = capsys.readouterr()
@@ -35,8 +44,11 @@ def test_stage(
     else:
         assert "inside '_run_pre_stage_actions' function" in captured.out
 
-    # Ensure `_begin_stage()` is called.
-    assert "Test stage" in captured.out
+    # Ensure begin stage actions were run.
+    if custom_begin_stage:
+        assert "inside '_begin_test_stage' function" in captured.out
+    else:
+        assert "inside '_begin_stage' function" in captured.out
 
     # Ensure the stage runs or is skipped.
     if "test" in stages_to_run:
