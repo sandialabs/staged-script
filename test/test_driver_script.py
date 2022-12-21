@@ -128,12 +128,23 @@ def test_run(
     assert command in ds.commands_executed
 
 
+@pytest.mark.parametrize(
+    "extras",
+    [
+        {
+            "More information": "Additional details.",
+            "Another section": "With still more information."
+        },
+        None
+    ]
+)
 @patch(
     "reverse_argparse.ReverseArgumentParser."
     "get_pretty_command_line_invocation"
 )
 def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,
+    extras: dict[str, str] | None,
     ds: DriverScript,
     capsys: pytest.CaptureFixture
 ) -> None:
@@ -151,22 +162,20 @@ def test_print_script_execution_summary(
         )
     ]  # yapf: disable
     ds.commands_executed = ["foo", "bar", "baz"]
-    extras = {
-        "More information": "Additional details.",
-        "Another section": "With still more information."
-    }
-    ds.print_script_execution_summary(extra_sections=extras)
+    if extras is None:
+        ds.print_script_execution_summary()
+    else:
+        ds.print_script_execution_summary(extra_sections=extras)
     captured = capsys.readouterr()
-    headings = (
-        ["Ran the following", "Commands executed", "Timing results"]
-        + list(extras.keys())
-    )  # yapf: disable
+    headings = ["Ran the following", "Commands executed", "Timing results"]
     details = (
         [mock_get_pretty_command_line_invocation.return_value]
         + ds.commands_executed
         + [_.stage for _ in ds.durations]
         + [str(_.duration) for _ in ds.durations]
-        + list(extras.values())
     )  # yapf: disable
+    if extras is not None:
+        headings += list(extras.keys())
+        details += list(extras.values())
     for item in headings + details:
         assert item in captured.out
