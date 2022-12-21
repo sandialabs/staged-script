@@ -246,11 +246,9 @@ class DriverScript:
                     else:
                         self._skip_stage()
                         result = skip_result
-                    self._end_stage()
                     return result
-                except Exception as e:
+                finally:
                     self._end_stage()
-                    raise e
 
             return wrapper
 
