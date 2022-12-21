@@ -25,6 +25,13 @@ class MyAdvancedScript(DriverScript):
         print("inside '_run_post_stage_actions' function")
 
 
+def check_phase(custom: bool, method_name: str, output: str) -> None:
+    if custom:
+        assert f"inside '{method_name}_test' function" in output
+    else:
+        assert f"inside '{method_name}' function" in output
+
+
 @pytest.mark.parametrize("custom_post_stage", [True, False])
 @pytest.mark.parametrize("custom_end_stage", [True, False])
 @pytest.mark.parametrize("custom_skip_stage", [True, False])
@@ -65,35 +72,11 @@ def test_stage(
         )
     script.run_test()
     captured = capsys.readouterr()
-
-    # Ensure pre-stage actions were run.
-    if custom_pre_stage:
-        assert "inside '_run_pre_stage_actions_test' function" in captured.out
-    else:
-        assert "inside '_run_pre_stage_actions' function" in captured.out
-
-    # Ensure begin stage actions were run.
-    if custom_begin_stage:
-        assert "inside '_begin_stage_test' function" in captured.out
-    else:
-        assert "inside '_begin_stage' function" in captured.out
-
-    # Ensure the stage runs or is skipped.
+    check_phase(custom_pre_stage, "_run_pre_stage_actions", captured.out)
+    check_phase(custom_begin_stage, "_begin_stage", captured.out)
     if "test" in stages_to_run:
         assert "inside 'run_test' function" in captured.out
-    elif custom_skip_stage:
-        assert "inside '_skip_stage_test' function" in captured.out
     else:
-        assert "inside '_skip_stage' function" in captured.out
-
-    # Ensure end stage actions were run.
-    if custom_end_stage:
-        assert "inside '_end_stage_test' function" in captured.out
-    else:
-        assert "inside '_end_stage' function" in captured.out
-
-    # Ensure post-stage actions were run.
-    if custom_post_stage:
-        assert "inside '_run_post_stage_actions_test' function" in captured.out
-    else:
-        assert "inside '_run_post_stage_actions' function" in captured.out
+        check_phase(custom_skip_stage, "_skip_stage", captured.out)
+    check_phase(custom_end_stage, "_end_stage", captured.out)
+    check_phase(custom_post_stage, "_run_post_stage_actions", captured.out)
