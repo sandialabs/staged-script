@@ -38,34 +38,34 @@ def test_stage(
     script = MyAdvancedScript()
     script.stages_to_run = stages_to_run
     if custom_pre_stage:
-        script._run_pre_test_stage_actions = (
-            lambda: print("inside '_run_pre_test_stage_actions' function")
+        script._run_pre_stage_actions_test = (
+            lambda: print("inside '_run_pre_stage_actions_test' function")
         )
     if custom_begin_stage:
-        script._begin_test_stage = (
+        script._begin_stage_test = (
             lambda stage_name, heading:
-                print("inside '_begin_test_stage' function")
+                print("inside '_begin_stage_test' function")
         )  # yapf: disable
     if custom_end_stage:
-        script._end_test_stage = (
-            lambda: print("inside '_end_test_stage' function")
+        script._end_stage_test = (
+            lambda: print("inside '_end_stage_test' function")
         )
     if custom_post_stage:
-        script._run_post_test_stage_actions = (
-            lambda: print("inside '_run_post_test_stage_actions' function")
+        script._run_post_stage_actions_test = (
+            lambda: print("inside '_run_post_stage_actions_test' function")
         )
     script.run_test()
     captured = capsys.readouterr()
 
     # Ensure pre-stage actions were run.
     if custom_pre_stage:
-        assert "inside '_run_pre_test_stage_actions' function" in captured.out
+        assert "inside '_run_pre_stage_actions_test' function" in captured.out
     else:
         assert "inside '_run_pre_stage_actions' function" in captured.out
 
     # Ensure begin stage actions were run.
     if custom_begin_stage:
-        assert "inside '_begin_test_stage' function" in captured.out
+        assert "inside '_begin_stage_test' function" in captured.out
     else:
         assert "inside '_begin_stage' function" in captured.out
 
@@ -77,12 +77,12 @@ def test_stage(
 
     # Ensure end stage actions were run.
     if custom_end_stage:
-        assert "inside '_end_test_stage' function" in captured.out
+        assert "inside '_end_stage_test' function" in captured.out
     else:
         assert "inside '_end_stage' function" in captured.out
 
     # Ensure post-stage actions were run.
     if custom_post_stage:
-        assert "inside '_run_post_test_stage_actions' function" in captured.out
+        assert "inside '_run_post_stage_actions_test' function" in captured.out
     else:
         assert "inside '_run_post_stage_actions' function" in captured.out

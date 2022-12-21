@@ -261,34 +261,22 @@ class DriverScript:
 
         def decorator(func: Callable) -> Callable:
 
-            def run_phase(
-                self,
-                custom_method: str,
-                fallback_method: str,
-                *args,
-                **kwargs
-            ) -> None:
-                run_custom_method = getattr(self, custom_method, False)
+            def run_phase(self, method_name: str, *args, **kwargs) -> None:
+                run_custom_method = getattr(
+                    self,
+                    f"{method_name}_{stage_name}",
+                    False
+                )
                 if run_custom_method:
                     run_custom_method(*args, **kwargs)
                 else:
-                    getattr(self, fallback_method)(*args, **kwargs)
+                    getattr(self, method_name)(*args, **kwargs)
 
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> Any:
-                run_phase(
-                    self,
-                    f"_run_pre_{stage_name}_stage_actions",
-                    "_run_pre_stage_actions"
-                )
+                run_phase(self, "_run_pre_stage_actions")
                 try:
-                    run_phase(
-                        self,
-                        f"_begin_{stage_name}_stage",
-                        "_begin_stage",
-                        stage_name,
-                        heading
-                    )
+                    run_phase(self, "_begin_stage", stage_name, heading)
                     if stage_name in self.stages_to_run:
                         result = func(self, *args, **kwargs)
                     else:
@@ -296,12 +284,8 @@ class DriverScript:
                         result = skip_result
                     return result
                 finally:
-                    run_phase(self, f"_end_{stage_name}_stage", "_end_stage")
-                    run_phase(
-                        self,
-                        f"_run_post_{stage_name}_stage_actions",
-                        "_run_post_stage_actions"
-                    )
+                    run_phase(self, "_end_stage")
+                    run_phase(self, "_run_post_stage_actions")
 
             return wrapper
 
