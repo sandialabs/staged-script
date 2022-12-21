@@ -15,7 +15,11 @@ class MyAdvancedScript(DriverScript):
     def _begin_stage(self, stage_name: str, heading: str) -> None:
         print("inside '_begin_stage' function")
 
+    def _run_post_stage_actions(self) -> None:
+        print("inside '_run_post_stage_actions' function")
 
+
+@pytest.mark.parametrize("custom_post_stage", [True, False])
 @pytest.mark.parametrize("custom_begin_stage", [True, False])
 @pytest.mark.parametrize("custom_pre_stage", [True, False])
 @pytest.mark.parametrize("stages_to_run", [{"test"}, set()])
@@ -23,6 +27,7 @@ def test_stage(
     stages_to_run: set[str],
     custom_pre_stage: bool,
     custom_begin_stage: bool,
+    custom_post_stage: bool,
     capsys: pytest.CaptureFixture
 ) -> None:
     script = MyAdvancedScript()
@@ -34,6 +39,10 @@ def test_stage(
     if custom_begin_stage:
         script._begin_test_stage = (
             lambda: print("inside '_begin_test_stage' function")
+        )
+    if custom_post_stage:
+        script._run_post_test_stage_actions = (
+            lambda: print("inside '_run_post_test_stage_actions' function")
         )
     script.run_test()
     captured = capsys.readouterr()
@@ -58,3 +67,9 @@ def test_stage(
 
     # Ensure `_end_stage()` is called.
     assert "duration:" in captured.out
+
+    # Ensure post-stage actions were run.
+    if custom_post_stage:
+        assert "inside '_run_post_test_stage_actions' function" in captured.out
+    else:
+        assert "inside '_run_post_stage_actions' function" in captured.out

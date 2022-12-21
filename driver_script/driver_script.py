@@ -230,6 +230,12 @@ class DriverScript:
         """
         self.console.log("Skipping this stage.")
 
+    def _run_post_stage_actions(self) -> None:
+        """
+        TODO:  INSERT DOCSTRING.
+        """
+        pass
+
     @staticmethod
     def stage(
         stage_name: str,
@@ -281,6 +287,17 @@ class DriverScript:
                 else:
                     self._begin_stage(stage_name, heading)
 
+            def run_post_stage_phase(self) -> None:
+                run_custom_post_stage_actions = getattr(
+                    self,
+                    f"_run_post_{stage_name}_stage_actions",
+                    False
+                )
+                if run_custom_post_stage_actions:
+                    run_custom_post_stage_actions()
+                else:
+                    self._run_post_stage_actions()
+
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> Any:
                 run_pre_stage_phase(self)
@@ -294,6 +311,7 @@ class DriverScript:
                     return result
                 finally:
                     self._end_stage()
+                    run_post_stage_phase(self)
 
             return wrapper
 
