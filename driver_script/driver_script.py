@@ -261,59 +261,34 @@ class DriverScript:
 
         def decorator(func: Callable) -> Callable:
 
-            def run_pre_stage_phase(self) -> None:
-                run_custom_pre_stage_actions = getattr(
-                    self,
-                    f"_run_pre_{stage_name}_stage_actions",
-                    False
-                )
-                if run_custom_pre_stage_actions:
-                    run_custom_pre_stage_actions()
-                else:
-                    self._run_pre_stage_actions()
-
-            def run_begin_stage_phase(
+            def run_phase(
                 self,
-                stage_name: str,
-                heading: str
+                custom_method: str,
+                fallback_method: str,
+                *args,
+                **kwargs
             ) -> None:
-                run_custom_begin_stage_actions = getattr(
-                    self,
-                    f"_begin_{stage_name}_stage",
-                    False
-                )
-                if run_custom_begin_stage_actions:
-                    run_custom_begin_stage_actions()
+                run_custom_method = getattr(self, custom_method, False)
+                if run_custom_method:
+                    run_custom_method(*args, **kwargs)
                 else:
-                    self._begin_stage(stage_name, heading)
-
-            def run_end_stage_phase(self) -> None:
-                run_custom_end_stage_actions = getattr(
-                    self,
-                    f"_end_{stage_name}_stage",
-                    False
-                )
-                if run_custom_end_stage_actions:
-                    run_custom_end_stage_actions()
-                else:
-                    self._end_stage()
-
-            def run_post_stage_phase(self) -> None:
-                run_custom_post_stage_actions = getattr(
-                    self,
-                    f"_run_post_{stage_name}_stage_actions",
-                    False
-                )
-                if run_custom_post_stage_actions:
-                    run_custom_post_stage_actions()
-                else:
-                    self._run_post_stage_actions()
+                    getattr(self, fallback_method)(*args, **kwargs)
 
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> Any:
-                run_pre_stage_phase(self)
+                run_phase(
+                    self,
+                    f"_run_pre_{stage_name}_stage_actions",
+                    "_run_pre_stage_actions"
+                )
                 try:
-                    run_begin_stage_phase(self, stage_name, heading)
+                    run_phase(
+                        self,
+                        f"_begin_{stage_name}_stage",
+                        "_begin_stage",
+                        stage_name,
+                        heading
+                    )
                     if stage_name in self.stages_to_run:
                         result = func(self, *args, **kwargs)
                     else:
@@ -321,8 +296,12 @@ class DriverScript:
                         result = skip_result
                     return result
                 finally:
-                    run_end_stage_phase(self)
-                    run_post_stage_phase(self)
+                    run_phase(self, f"_end_{stage_name}_stage", "_end_stage")
+                    run_phase(
+                        self,
+                        f"_run_post_{stage_name}_stage_actions",
+                        "_run_post_stage_actions"
+                    )
 
             return wrapper
 

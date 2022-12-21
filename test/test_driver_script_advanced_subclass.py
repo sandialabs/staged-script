@@ -43,8 +43,9 @@ def test_stage(
         )
     if custom_begin_stage:
         script._begin_test_stage = (
-            lambda: print("inside '_begin_test_stage' function")
-        )
+            lambda stage_name, heading:
+                print("inside '_begin_test_stage' function")
+        )  # yapf: disable
     if custom_end_stage:
         script._end_test_stage = (
             lambda: print("inside '_end_test_stage' function")
