@@ -30,6 +30,27 @@ def test_print_dry_run_message(
     assert expected in captured.out
 
 
+def test__add_stage(capsys: pytest.CaptureFixture) -> None:
+    DriverScript.stages = []
+    DriverScript._add_stage("first")
+    DriverScript._add_stage("second")
+    DriverScript._add_stage("first")
+    assert DriverScript.stages == ["first", "second"]
+    captured = capsys.readouterr()
+    assert "you're redefining the 'first' stage" in captured.out
+
+
+@pytest.mark.parametrize(
+    "stage_name",
+    ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
+)  # yapf: disable
+def test__add_stage_raises(stage_name: str) -> None:
+    with pytest.raises(ValueError) as e:
+        DriverScript._add_stage(stage_name)
+    msg = e.value.args[0]
+    assert f"'{stage_name}' must contain only lowercase letters" in msg
+
+
 def test__begin_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
     stage_name = "test"
     message = "begin stage"

@@ -153,8 +153,7 @@ class DriverScript:
     @staticmethod
     def _add_stage(stage_name: str) -> None:
         """
-        Add a new stage to the list of stages, as long as the stage name
-        is a valid Python identifier.
+        Add a new stage to the list of stages.
 
         Note:
             The `stages` class variable is conceptually an ordered set,
@@ -172,14 +171,25 @@ class DriverScript:
             the user to ensure they use unique stage names.
 
         Args:
-            stage_name:  The name of the stage.
+            stage_name:  The name of the stage, which must consist of
+                only lowercase letters, both to simplify implementation
+                details elsewhere in the class, and to provide the best
+                user experience for users of your :class:`DriverScript`
+                subclasses.
 
         Raises:
             RuntimeError:  If the stage name is invalid.
         """
-        if not stage_name.isidentifier():
+        if not re.match("^[a-z]+$", stage_name):
             raise ValueError(
-                f"Stage name '{stage_name}' must be a valid Python identifier."
+                f"Stage name '{stage_name}' must contain only lowercase "
+                "letters."
+            )
+        if stage_name in __class__.stages:
+            print(
+                "Warning:  It looks like you're redefining the "
+                f"'{stage_name}' stage.  Stage names within a 'DriverScript' "
+                "subclass must be unique."
             )
         __class__.stages = list(dict.fromkeys(__class__.stages + [stage_name]))
 
