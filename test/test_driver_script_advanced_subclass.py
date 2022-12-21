@@ -15,6 +15,9 @@ class MyAdvancedScript(DriverScript):
     def _begin_stage(self, stage_name: str, heading: str) -> None:
         print("inside '_begin_stage' function")
 
+    def _skip_stage(self) -> None:
+        print("inside '_skip_stage' function")
+
     def _end_stage(self) -> None:
         print("inside '_end_stage' function")
 
@@ -24,6 +27,7 @@ class MyAdvancedScript(DriverScript):
 
 @pytest.mark.parametrize("custom_post_stage", [True, False])
 @pytest.mark.parametrize("custom_end_stage", [True, False])
+@pytest.mark.parametrize("custom_skip_stage", [True, False])
 @pytest.mark.parametrize("custom_begin_stage", [True, False])
 @pytest.mark.parametrize("custom_pre_stage", [True, False])
 @pytest.mark.parametrize("stages_to_run", [{"test"}, set()])
@@ -31,6 +35,7 @@ def test_stage(
     stages_to_run: set[str],
     custom_pre_stage: bool,
     custom_begin_stage: bool,
+    custom_skip_stage: bool,
     custom_end_stage: bool,
     custom_post_stage: bool,
     capsys: pytest.CaptureFixture
@@ -46,6 +51,10 @@ def test_stage(
             lambda stage_name, heading:
                 print("inside '_begin_stage_test' function")
         )  # yapf: disable
+    if custom_skip_stage:
+        script._skip_stage_test = (
+            lambda: print("inside '_skip_stage_test' function")
+        )
     if custom_end_stage:
         script._end_stage_test = (
             lambda: print("inside '_end_stage_test' function")
@@ -72,8 +81,10 @@ def test_stage(
     # Ensure the stage runs or is skipped.
     if "test" in stages_to_run:
         assert "inside 'run_test' function" in captured.out
+    elif custom_skip_stage:
+        assert "inside '_skip_stage_test' function" in captured.out
     else:
-        assert "Skipping this stage." in captured.out
+        assert "inside '_skip_stage' function" in captured.out
 
     # Ensure end stage actions were run.
     if custom_end_stage:

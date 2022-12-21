@@ -280,7 +280,7 @@ class DriverScript:
                     if stage_name in self.stages_to_run:
                         result = func(self, *args, **kwargs)
                     else:
-                        self._skip_stage()
+                        run_phase(self, "_skip_stage")
                         result = skip_result
                     return result
                 finally:
