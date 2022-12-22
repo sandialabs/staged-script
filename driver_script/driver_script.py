@@ -195,13 +195,58 @@ class DriverScript:
 
     def _run_pre_stage_actions(self) -> None:
         """
-        TODO:  INSERT DOCSTRING.
+        Run a series of commands before a stage actually starts.  This
+        is implemented here as a no-op, but subclass developers can
+        override it if they wish to always perform certain actions
+        before stages get underway (e.g., maybe you want to log some
+        details on the state of the system, etc.).
+
+        Subclass developers can also customize the **Pre-Stage Actions**
+        for an individual stage by defining a
+        ``_run_pre_stage_actions_STAGE_NAME`` method, where
+        ``STAGE_NAME`` should be replaced with the name of the stage
+        (the first argument to the :func:`stage` decorator).  This can
+        be useful if, e.g., you wanted to ensure certain pre-conditions
+        were met before attempting the stage, and erroring out
+        appropriately if not.
         """
         pass
 
     def _begin_stage(self, stage_name: str, heading: str) -> None:
         """
         Execute a series of commands at the beginning of every stage.
+
+        If subclass developers wish to extend the **Begin-Stage
+        Actions**, they can do so with the following:
+
+        .. code-block:: python
+
+            def _begin_stage(
+                self,
+                stage_name: str,
+                heading: str
+            ) -> None:
+                super()._begin_stage(stage_name, heading)
+                # Insert more actions here.
+
+        Alternatively you can override the default behavior entirely by
+        omitting the `super()` line above.
+
+        In addition, you may wish to customize the **Begin-Stage
+        Actions** for a particular stage, in which case you define a
+        ``_begin_stage_STAGE_NAME`` method, where ``STAGE_NAME`` should
+        be replaced with the name of the stage (the first argument to
+        the :func:`stage` decorator), e.g.:
+
+        .. code-block:: python
+
+            def _begin_stage_test(  # Particular to the 'test' stage.
+                self,
+                stage_name: str,
+                heading: str
+            ) -> None:
+                self._begin_stage(stage_name, heading)  # Optional
+                # Insert more actions here.
 
         Args:
             stage_name:  The name of the stage.
@@ -212,9 +257,65 @@ class DriverScript:
         self.current_stage = stage_name
         self.print_heading(heading)
 
+    def _skip_stage(self) -> None:
+        """
+        Execute a series of commands when skipping a stage.
+
+        If subclass developers wish to extend the **Skip-Stage
+        Actions**, they can do so with the following:
+
+        .. code-block:: python
+
+            def _skip_stage(self) -> None:
+                super()._skip_stage()
+                # Insert more actions here.
+
+        Alternatively you can override the default behavior entirely by
+        omitting the `super()` line above.
+
+        In addition, you may wish to customize the **Skip-Stage
+        Actions** for a particular stage, in which case you define a
+        ``_skip_stage_STAGE_NAME`` method, where ``STAGE_NAME`` should
+        be replaced with the name of the stage (the first argument to
+        the :func:`stage` decorator), e.g.:
+
+        .. code-block:: python
+
+            # Particular to the 'test' stage.
+            def _skip_stage_test(self) -> None:
+                self._skip_stage()  # Optional
+                # Insert more actions here.
+        """
+        self.console.log("Skipping this stage.")
+
     def _end_stage(self) -> None:
         """
         Execute a series of commands at the end of every stage.
+
+        If subclass developers wish to extend the **End-Stage Actions**,
+        they can do so with the following:
+
+        .. code-block:: python
+
+            def _end_stage(self) -> None:
+                super()._end_stage()
+                # Insert more actions here.
+
+        Alternatively you can override the default behavior entirely by
+        omitting the `super()` line above.
+
+        In addition, you may wish to customize the **End-Stage Actions**
+        for a particular stage, in which case you define an
+        ``_end_stage_STAGE_NAME`` method, where ``STAGE_NAME`` should
+        be replaced with the name of the stage (the first argument to
+        the :func:`stage` decorator), e.g.:
+
+        .. code-block:: python
+
+            # Particular to the 'test' stage.
+            def _end_stage_test(self) -> None:
+                self._end_stage()  # Optional
+                # Insert more actions here.
         """
         stage_duration = datetime.now() - self.stage_start_time
         self.durations.append(
@@ -224,15 +325,23 @@ class DriverScript:
             f"`{self.current_stage}` stage duration:  {str(stage_duration)}"
         )
 
-    def _skip_stage(self) -> None:
-        """
-        Execute a series of commands when skipping a stage.
-        """
-        self.console.log("Skipping this stage.")
-
     def _run_post_stage_actions(self) -> None:
         """
-        TODO:  INSERT DOCSTRING.
+        Run a series of commands after a stage wraps up.  This is
+        implemented here as a no-op, but subclass developers can
+        override it if they wish to always perform certain actions
+        after stages complete and before execution moves on with the
+        rest of the script (e.g., maybe you want to log some details on
+        the state of the system, etc.).
+
+        Subclass developers can also customize the **Post-Stage
+        Actions** for an individual stage by defining a
+        ``_run_post_stage_actions_STAGE_NAME`` method, where
+        ``STAGE_NAME`` should be replaced with the name of the stage
+        (the first argument to the :func:`stage` decorator).  This can
+        be useful if, e.g., you wanted to ensure certain post-conditions
+        were met before moving on, and erroring out appropriately if
+        not.
         """
         pass
 
@@ -243,10 +352,37 @@ class DriverScript:
         skip_result: Any = True
     ) -> Callable:
         """
-        A decorator to automatically run a series of commands before and
-        after every stage.
+        A decorator to take a function and convert it to a conceptual
+        stage of a script.  Each stage consists of the following phases:
 
-        TODO:  UPDATE DOCSTRING.
+        Pre-Stage Actions
+            A series of commands to run before a stage technically
+            begins.  See :func:`_run_pre_stage_actions`.
+        Begin-Stage Actions
+            A series of commands to run at the beginning of the stage.
+            See :func:`_begin_stage`.
+        Stage Body
+            The actual work of the stage itself, encapsulated in the
+            decorated function.  However, if a particular stage is not
+            to be executed (if it's not passed in with the ``--stage``
+            flag on the command line), then there's also the concept of
+            **Skip-Stage Actions**, which are a series of commands to
+            run if a stage is to be skipped.  See :func:`_skip_stage`.
+        End-Stage Actions
+            A series of commands to run at the end of the stage, even if
+            an exception was raised within the **Stage Body**.  See
+            :func:`_end_stage`.
+        Post-Stage Actions
+            A series of commands to run after a stage has technically
+            wrapped up.  See :func:`_run_post_stage_actions`.
+
+        Note:
+            The reason there's a distinction between pre- and
+            begin-stage actions, and end- and post-stage actions, is to
+            prepare for adding stage retry functionality.  Begin, body,
+            and end will happen in a retry loop, and pre and post will
+            happen before and after any retrying.
+            TODO:  REMOVE THIS NOTE AFTER ADDING RETRY FUNCTIONALITY.
 
         Args:
             stage_name:  The name of the stage.  Note that stage names
