@@ -405,18 +405,23 @@ class DriverScript:
                 else:
                     getattr(self, method_name)(*args, **kwargs)
 
+            def run_retryable_phases(self, *args, **kwargs) -> None:
+                run_phase(self, "_begin_stage", stage_name, heading)
+                if stage_name not in self.stages_to_run:
+                    run_phase(self, "_skip_stage")
+                else:
+                    try:
+                        func(self, *args, **kwargs)
+                    except Exception as e:
+                        run_phase(self, "_end_stage")
+                        raise e
+                run_phase(self, "_end_stage")
+
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> None:
                 run_phase(self, "_run_pre_stage_actions")
-                try:
-                    run_phase(self, "_begin_stage", stage_name, heading)
-                    if stage_name in self.stages_to_run:
-                        func(self, *args, **kwargs)
-                    else:
-                        run_phase(self, "_skip_stage")
-                finally:
-                    run_phase(self, "_end_stage")
-                    run_phase(self, "_run_post_stage_actions")
+                run_retryable_phases(self, *args, **kwargs)
+                run_phase(self, "_run_post_stage_actions")
 
             return wrapper
 
