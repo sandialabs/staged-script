@@ -395,6 +395,20 @@ class DriverScript:
         def decorator(func: Callable) -> Callable:
 
             def run_phase(self, method_name: str, *args, **kwargs) -> None:
+                """
+                Run a phase of a stage, using a stage-specific method
+                (e.g., ``_begin_stage_STAGE_NAME``), if one exists, or
+                the default implementation (e.g., :func:`_begin_stage`)
+                otherwise.
+
+                Args:
+                    method_name:  The name of the default method for the
+                        phase (e.g., ``"_begin_stage"``).
+                    args:  Any positional arguments to pass to the phase
+                        method.
+                    kwargs:  Any keyword arguments to pass to the phase
+                        method.
+                """
                 run_custom_method = getattr(
                     self,
                     f"{method_name}_{stage_name}",
@@ -406,6 +420,19 @@ class DriverScript:
                     getattr(self, method_name)(*args, **kwargs)
 
             def run_retryable_phases(self, *args, **kwargs) -> None:
+                """
+                Run the phases of the stage that are "retryable," namely
+                the begin-stage actions, stage body (including skip
+                actions, if applicable), and end-stage actions.  When a
+                stage is automatically retried, these phases will be run
+                again.
+
+                Raises:
+                    Exception:  If an exception is thrown in the stage
+                        body function, it will be caught such that the
+                        end-stage actions can be run, but then it will
+                        be re-raised so it can propagate upward.
+                """
                 run_phase(self, "_begin_stage", stage_name, heading)
                 if stage_name not in self.stages_to_run:
                     run_phase(self, "_skip_stage")
@@ -419,6 +446,10 @@ class DriverScript:
 
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> None:
+                """
+                Wrap the given ``func`` in the various phases of a
+                conceptual stage.
+                """
                 run_phase(self, "_run_pre_stage_actions")
                 run_retryable_phases(self, *args, **kwargs)
                 run_phase(self, "_run_post_stage_actions")
