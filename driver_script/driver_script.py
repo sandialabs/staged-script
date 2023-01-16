@@ -7,7 +7,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, NamedTuple
+from typing import Callable, NamedTuple
 
 import __main__
 import rich.traceback
@@ -348,8 +348,7 @@ class DriverScript:
     @staticmethod
     def stage(
         stage_name: str,
-        heading: str,
-        skip_result: Any = True
+        heading: str
     ) -> Callable:
         """
         A decorator to take a function and convert it to a conceptual
@@ -390,8 +389,6 @@ class DriverScript:
                 :class:`DriverScript`.
             heading:  A heading message to print indicating what will
                 happen in the stage.
-            skip_result:  The result to be returned if the stage is
-                skipped.
         """
         __class__._add_stage(stage_name)
 
@@ -409,16 +406,14 @@ class DriverScript:
                     getattr(self, method_name)(*args, **kwargs)
 
             @functools.wraps(func)
-            def wrapper(self, *args, **kwargs) -> Any:
+            def wrapper(self, *args, **kwargs) -> None:
                 run_phase(self, "_run_pre_stage_actions")
                 try:
                     run_phase(self, "_begin_stage", stage_name, heading)
                     if stage_name in self.stages_to_run:
-                        result = func(self, *args, **kwargs)
+                        func(self, *args, **kwargs)
                     else:
                         run_phase(self, "_skip_stage")
-                        result = skip_result
-                    return result
                 finally:
                     run_phase(self, "_end_stage")
                     run_phase(self, "_run_post_stage_actions")
