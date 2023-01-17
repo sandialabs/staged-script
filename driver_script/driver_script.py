@@ -394,30 +394,26 @@ class DriverScript:
 
         def decorator(func: Callable) -> Callable:
 
-            def run_phase(self, method_name: str, *args, **kwargs) -> None:
+            def get_phase_method(self, method_name: str) -> Callable:
                 """
-                Run a phase of a stage, using a stage-specific method
-                (e.g., ``_begin_stage_STAGE_NAME``), if one exists, or
-                the default implementation (e.g., :func:`_begin_stage`)
-                otherwise.
+                Get the method to run for a phase of a stage.
 
                 Args:
                     method_name:  The name of the default method for the
                         phase (e.g., ``"_begin_stage"``).
-                    args:  Any positional arguments to pass to the phase
-                        method.
-                    kwargs:  Any keyword arguments to pass to the phase
-                        method.
+
+                Returns:
+                    Either a stage-specific method (e.g.,
+                    ``_begin_stage_STAGE_NAME``), if one exists, or the
+                    default implementation (e.g., :func:`_begin_stage`)
+                    otherwise.
                 """
-                run_custom_method = getattr(
+                custom_method = getattr(
                     self,
                     f"{method_name}_{stage_name}",
                     False
                 )
-                if run_custom_method:
-                    run_custom_method(*args, **kwargs)
-                else:
-                    getattr(self, method_name)(*args, **kwargs)
+                return custom_method or getattr(self, method_name)
 
             def run_retryable_phases(self, *args, **kwargs) -> None:
                 """
@@ -427,22 +423,28 @@ class DriverScript:
                 stage is automatically retried, these phases will be run
                 again.
 
+                Args:
+                    args: The positional arguments to pass on to the
+                        phase method.
+                    kwargs: The keyword arguments to pass on to the
+                        phase method.
+
                 Raises:
                     Exception:  If an exception is thrown in the stage
                         body function, it will be caught such that the
                         end-stage actions can be run, but then it will
                         be re-raised so it can propagate upward.
                 """
-                run_phase(self, "_begin_stage", stage_name, heading)
+                get_phase_method(self, "_begin_stage")(stage_name, heading)
                 if stage_name not in self.stages_to_run:
-                    run_phase(self, "_skip_stage")
+                    get_phase_method(self, "_skip_stage")()
                 else:
                     try:
                         func(self, *args, **kwargs)
                     except Exception as e:
-                        run_phase(self, "_end_stage")
+                        get_phase_method(self, "_end_stage")()
                         raise e
-                run_phase(self, "_end_stage")
+                get_phase_method(self, "_end_stage")()
 
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> None:
@@ -450,9 +452,9 @@ class DriverScript:
                 Wrap the given ``func`` in the various phases of a
                 conceptual stage.
                 """
-                run_phase(self, "_run_pre_stage_actions")
+                get_phase_method(self, "_run_pre_stage_actions")()
                 run_retryable_phases(self, *args, **kwargs)
-                run_phase(self, "_run_post_stage_actions")
+                get_phase_method(self, "_run_post_stage_actions")()
 
             return wrapper
 
