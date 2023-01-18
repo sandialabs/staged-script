@@ -52,12 +52,10 @@ def test__add_stage_raises(stage_name: str) -> None:
 
 
 def test__begin_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
-    stage_name = "test"
     message = "begin stage"
-    ds._begin_stage(stage_name, message)
+    ds._begin_stage(message)
     captured = capsys.readouterr()
     assert message in captured.out
-    assert ds.current_stage == stage_name
     assert ds.stage_start_time is not None
 
 

@@ -212,7 +212,7 @@ class DriverScript:
         """
         pass
 
-    def _begin_stage(self, stage_name: str, heading: str) -> None:
+    def _begin_stage(self, heading: str) -> None:
         """
         Execute a series of commands at the beginning of every stage.
 
@@ -223,10 +223,9 @@ class DriverScript:
 
             def _begin_stage(
                 self,
-                stage_name: str,
                 heading: str
             ) -> None:
-                super()._begin_stage(stage_name, heading)
+                super()._begin_stage(heading)
                 # Insert more actions here.
 
         Alternatively you can override the default behavior entirely by
@@ -242,19 +241,16 @@ class DriverScript:
 
             def _begin_stage_test(  # Particular to the 'test' stage.
                 self,
-                stage_name: str,
                 heading: str
             ) -> None:
-                self._begin_stage(stage_name, heading)  # Optional
+                self._begin_stage(heading)  # Optional
                 # Insert more actions here.
 
         Args:
-            stage_name:  The name of the stage.
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """
         self.stage_start_time = datetime.now()
-        self.current_stage = stage_name
         self.print_heading(heading)
 
     def _skip_stage(self) -> None:
@@ -435,8 +431,8 @@ class DriverScript:
                         end-stage actions can be run, but then it will
                         be re-raised so it can propagate upward.
                 """
-                get_phase_method(self, "_begin_stage")(stage_name, heading)
-                if stage_name not in self.stages_to_run:
+                get_phase_method(self, "_begin_stage")(heading)
+                if self.current_stage not in self.stages_to_run:
                     get_phase_method(self, "_skip_stage")()
                 else:
                     try:
@@ -452,6 +448,7 @@ class DriverScript:
                 Wrap the given ``func`` in the various phases of a
                 conceptual stage.
                 """
+                self.current_stage = stage_name
                 get_phase_method(self, "_run_pre_stage_actions")()
                 run_retryable_phases(self, *args, **kwargs)
                 get_phase_method(self, "_run_post_stage_actions")()

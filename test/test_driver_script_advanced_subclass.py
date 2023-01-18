@@ -12,7 +12,7 @@ class MyAdvancedScript(DriverScript):
     def _run_pre_stage_actions(self) -> None:
         print("inside '_run_pre_stage_actions' function")
 
-    def _begin_stage(self, stage_name: str, heading: str) -> None:
+    def _begin_stage(self, heading: str) -> None:
         print("inside '_begin_stage' function")
 
     def _skip_stage(self) -> None:
@@ -55,9 +55,8 @@ def test_stage(
         )
     if custom_begin_stage:
         script._begin_stage_test = (
-            lambda stage_name, heading:
-                print("inside '_begin_stage_test' function")
-        )  # yapf: disable
+            lambda heading: print("inside '_begin_stage_test' function")
+        )
     if custom_skip_stage:
         script._skip_stage_test = (
             lambda: print("inside '_skip_stage_test' function")
