@@ -3,6 +3,11 @@ from python.driver_script.driver_script.driver_script import DriverScript
 import pytest
 
 
+# Clear out the `stages` defined by `DriverScript` subclasses run
+# elsewhere by `pytest`.
+DriverScript.stages = []
+
+
 class MyAdvancedScript(DriverScript):
 
     @DriverScript.stage("test", "Test stage")
@@ -48,6 +53,7 @@ def test_stage(
     capsys: pytest.CaptureFixture
 ) -> None:
     script = MyAdvancedScript()
+    script.parse_args([])
     script.stages_to_run = stages_to_run
     if custom_pre_stage:
         script._run_pre_stage_actions_test = (

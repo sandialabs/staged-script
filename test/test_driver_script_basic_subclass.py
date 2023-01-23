@@ -3,6 +3,11 @@ from python.driver_script.driver_script.driver_script import DriverScript
 import pytest
 
 
+# Clear out the `stages` defined by `DriverScript` subclasses run
+# elsewhere by `pytest`.
+DriverScript.stages = []
+
+
 class MyBasicScript(DriverScript):
 
     @DriverScript.stage("good", "Stage that executes correctly")
@@ -22,6 +27,7 @@ def test_good_stage(
     capsys: pytest.CaptureFixture
 ) -> None:
     script = MyBasicScript()
+    script.parse_args([])
     script.stages_to_run = stages_to_run
     script.run_good_stage()
     captured = capsys.readouterr()
@@ -42,6 +48,7 @@ def test_good_stage(
 @pytest.mark.parametrize("error", [True, False])
 def test_bad_stage(error: bool, capsys: pytest.CaptureFixture) -> None:
     script = MyBasicScript()
+    script.parse_args([])
     script.stages_to_run = {"bad"}
     if error:
         with pytest.raises(RuntimeError) as e:
@@ -63,3 +70,12 @@ def test_bad_stage(error: bool, capsys: pytest.CaptureFixture) -> None:
 
     # Ensure `_end_stage()` is called, regardless of exceptions.
     assert "duration:" in captured.out
+
+
+@pytest.mark.parametrize("stage", ["good", "bad"])
+def test_parser_retry_options(stage: str) -> None:
+    script = MyBasicScript()
+    help_text = script.parser.format_help()
+    assert f"--{stage}-retry-attempts" in help_text
+    assert f"--{stage}-retry-delay" in help_text
+    assert f"--{stage}-retry-timeout" in help_text

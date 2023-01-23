@@ -79,10 +79,31 @@ class DriverScript:
             how long it took for each to run.  This is implemented as a
             ``list`` of named tuples instead of as a ``dict`` to allow
             the flexibility for stages to be run multiple times.
+        retry_arg_group (argparse._ArgumentGroup):  A container within
+            the :class:`ArgumentParser` holding all the arguments
+            associated with retrying stages.
         stage_start_time (datetime):  The time at which a stage began.
         stages_to_run (set[str]):  Which stages to run.
         start_time (datetime):  The time at which this object was
             initialized.
+
+    Note that additional attributes are automatically generated for each
+    ``stage`` defined by a subclass:
+    * ``STAGE_NAME_retry_attempts`` (int):  The number of times to
+      attempt retrying the ``STAGE_NAME`` stage.
+    * ``STAGE_NAME_retry_attempts_arg`` (argparse.Action):  The
+      corresponding argument in the :class:`ArgumentParser`, so subclass
+      developers can modify it if needed.
+    * ``STAGE_NAME_retry_delay`` (float):  How long to wait (in seconds)
+      before attempting to retry the ``STAGE_NAME`` stage.
+    * ``STAGE_NAME_retry_delay_arg`` (argparse.Action):  The
+      corresponding argument in the :class:`ArgumentParser`, so subclass
+      developers can modify it if needed.
+    * ``STAGE_NAME_retry_timeout`` (int):  How long to wait (in seconds)
+      before giving up on retrying the ``STAGE_NAME`` stage.
+    * ``STAGE_NAME_retry_timeout_arg`` (argparse.Action):  The
+      corresponding argument in the :class:`ArgumentParser`, so subclass
+      developers can modify it if needed.
 
     Class Variables:
         stages (list[str]):  The stages defined for the script.
@@ -380,8 +401,9 @@ class DriverScript:
             TODO:  REMOVE THIS NOTE AFTER ADDING RETRY FUNCTIONALITY.
 
         Args:
-            stage_name:  The name of the stage.  Note that stage names
-                must be unique within a class that inherits from
+            stage_name:  The name of the stage, which must consist of
+                only lowercase letters.  Note that stage names must be
+                unique within a class that inherits from
                 :class:`DriverScript`.
             heading:  A heading message to print indicating what will
                 happen in the stage.
@@ -573,7 +595,35 @@ class DriverScript:
         than the default, and if you'd like to set the default value for
         the ``--stage`` argument, you can use :func:`set_defaults` (the
         example above defaults to running all the stages in the order in
-        which they were defined).
+        which they were defined).  Similarly, if you wish to override
+        the default values for the retry arguments that are
+        automatically provided for every stage, you can do so with,
+        e.g.:
+
+        .. code-block:: python
+
+            ap.set_defaults(
+                foo_retry_attempts=5,
+                foo_retry_delay=10,
+                foo_retry_timeout=600
+            )
+
+        If you wish to suppress the stage retry arguments for your
+        stages that don't raise a :class:`tenacity.TryAgain` exception,
+        you can do so with, e.g.:
+
+        .. code-block:: python
+
+            self.foo_retry_attempts_arg.help = argparse.SUPPRESS
+            self.foo_retry_delay_arg.help = argparse.SUPPRESS
+            self.foo_retry_timeout_arg.help = argparse.SUPPRESS
+
+        And if you want to remove the title for the retry group
+        altogether, you can do so with:
+
+        .. code-block:: python
+
+            self.retry_arg_group.title = argparse.SUPPRESS
 
         Returns:
             The base argument parser.
@@ -596,6 +646,34 @@ docstring for details.
             help="If specified, don't actually run the commands in the shell; "
             "instead print the commands that would have been executed."
         )
+        if self.stages:
+            self.retry_arg_group = ap.add_argument_group(
+                "Options for retrying stages"
+            )
+            for stage in self.stages:
+                retry_attempts = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-attempts",
+                    default=0,
+                    type=int,
+                    help=f"How many times to retry the '{stage}' stage."
+                )
+                setattr(self, f"{stage}_retry_attempts_arg", retry_attempts)
+                retry_delay = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-delay",
+                    default=0,
+                    type=float,
+                    help="How long to wait (in seconds) before retrying the "
+                    f"'{stage}' stage."
+                )
+                setattr(self, f"{stage}_retry_delay_arg", retry_delay)
+                retry_timeout = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-timeout",
+                    default=60,
+                    type=int,
+                    help="How long to wait (in seconds) before giving up on "
+                    f"retrying the '{stage}' stage."
+                )
+                setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
         return ap
 
     def parse_args(self, argv: list[str]) -> None:
@@ -619,7 +697,16 @@ docstring for details.
         """
         self.args = self.parser.parse_args(argv)
         self.dry_run = self.args.dry_run
-        self.stages_to_run = set(self.args.stage)
+        self.stages_to_run = (
+            set(self.args.stage) if self.args.stage is not None else set()
+        )
+        for stage in self.stages:
+            for retry_arg in [
+                f"{stage}_retry_attempts",
+                f"{stage}_retry_delay",
+                f"{stage}_retry_timeout"
+            ]:
+                setattr(self, retry_arg, getattr(self.args, retry_arg, None))
 
     def run(
         self,
