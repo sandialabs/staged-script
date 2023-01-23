@@ -125,7 +125,7 @@ class DriverScript:
                 file that generated a line in the console log.
 
         Note:
-            If you override this constructor in a child class---e.g., to
+            If you override this constructor in a subclass---e.g., to
             create additional attributes, etc.---you'll need to call
             this parent constructor with ``super().__init__()`` and
             optionally pass in any arguments.
@@ -576,7 +576,7 @@ class DriverScript:
         """
         Create an :class:`ArgumentParser` for all the arguments made
         available by this base class.  This should be overridden in
-        child classes as follows:
+        subclasses as follows:
 
         .. code-block:: python
 
@@ -630,8 +630,8 @@ class DriverScript:
         """
         description = """
 This is the description of the ArgumentParser in the DriverScript base
-class.  This should be overridden in your child class.  See the
-docstring for details.
+class.  This should be overridden in your subclass.  See the docstring
+for details.
 """
         ap = ArgumentParser(description=description)
         ap.add_argument(
@@ -679,7 +679,7 @@ docstring for details.
     def parse_args(self, argv: list[str]) -> None:
         """
         Parse the command line arguments supplied by this base class.
-        This should be overridden in child classes as follows:
+        This should be overridden in subclasses as follows:
 
         .. code-block:: python
 
@@ -750,9 +750,9 @@ docstring for details.
                 corresponding details will override that which is
                 provided by default.
 
-        Note:  If you wish to override this in a child class for the
-        sake of providing additional sections every time it's called,
-        you can do something like the following:
+        Note:  If you wish to override this in a subclass for the sake
+        of providing additional sections every time it's called, you can
+        do something like the following:
 
         .. code-block:: python
 
