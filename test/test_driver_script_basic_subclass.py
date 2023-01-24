@@ -3,11 +3,6 @@ from python.driver_script.driver_script.driver_script import DriverScript
 import pytest
 
 
-# Clear out the `stages` defined by `DriverScript` subclasses run
-# elsewhere by `pytest`.
-DriverScript.stages = []
-
-
 class MyBasicScript(DriverScript):
 
     @DriverScript.stage("good", "Stage that executes correctly")
@@ -19,6 +14,11 @@ class MyBasicScript(DriverScript):
         if error:
             raise RuntimeError("Something went wrong.")
         print("Got past error.")
+
+
+# Force the correct `stages` to get around a problem with how `pytest`
+# runs against all these files at once in CI.
+MyBasicScript.stages = ["good", "bad"]
 
 
 @pytest.mark.parametrize("stages_to_run", [{"good"}, set()])

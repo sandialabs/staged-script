@@ -4,12 +4,13 @@ from datetime import datetime, timedelta
 from subprocess import CompletedProcess
 from unittest.mock import MagicMock, patch
 
+import pytest
 from rich.console import Console
+
 from python.driver_script.driver_script.driver_script import (
     DriverScript,
     StageDuration
 )
-import pytest
 
 
 @pytest.fixture()
@@ -76,6 +77,54 @@ def test__skip_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
     ds._skip_stage()
     captured = capsys.readouterr()
     assert "Skipping this stage." in captured.out
+
+
+@pytest.mark.parametrize("retry_attempts", [0, 5])
+@patch("tenacity.Retrying")
+def test__handle_stage_retry_error(
+    mock_Retrying: MagicMock,
+    retry_attempts: int,
+    ds: DriverScript,
+    capsys: pytest.CaptureFixture
+) -> None:
+    ds.current_stage = "test"
+    ds.test_retry_attempts = retry_attempts
+    retry = mock_Retrying()
+    retry.statistics = {
+        "delay_since_first_attempt": 1234,
+        "attempt_number": retry_attempts
+    }
+    ds._handle_stage_retry_error(retry)
+    captured = capsys.readouterr()
+    if retry_attempts == 0:
+        assert captured.out == ""
+    else:
+        for text in [
+            "Abandoning retrying the 'test' stage.",
+            "Total attempts:",
+            "5.",
+            "Total time:",
+            "0:20:34."
+        ]:
+            assert text in captured.out
+
+
+@patch("tenacity.RetryCallState")
+def test__prepare_to_retry_stage(
+    mock_RetryCallState: MagicMock,
+    ds: DriverScript,
+    capsys: pytest.CaptureFixture
+) -> None:
+    ds.current_stage = "test"
+    retry_state = mock_RetryCallState()
+    retry_state.__repr__ = lambda self: "mock_RetryCallState.__repr__"
+    ds._prepare_to_retry_stage(retry_state)
+    captured = capsys.readouterr()
+    for text in [
+        "Preparing to retry the 'test' stage...",
+        "mock_RetryCallState.__repr__"
+    ]:
+        assert text in captured.out
 
 
 def test_get_timing_report(

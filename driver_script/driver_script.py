@@ -15,6 +15,10 @@ from rich.console import Console, Group
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.table import Table
+from tenacity import RetryCallState, RetryError, Retrying, TryAgain
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt, stop_after_delay
+from tenacity.wait import wait_fixed
 
 sys.path.append(str(Path(__file__).resolve().parents[3] / "python"))
 from reverse_argparse import ReverseArgumentParser  # noqa: E402
@@ -362,6 +366,114 @@ class DriverScript:
         """
         pass
 
+    def _prepare_to_retry_stage(self, retry_state: RetryCallState) -> None:
+        """
+        Prepare to retry a stage.  This method will be executed after
+        the **End-Stage Actions** of one attempt and before the
+        **Begin-Stage Actions** of a following attempt.
+
+        If subclass developers wish to extend the **Prepare-to-Retry
+        Actions**, they can do so with the following:
+
+        .. code-block:: python
+
+            def _prepare_to_retry_stage(
+                self,
+                retry_state: RetryCallState
+            ) -> None:
+                super()._prepare_to_retry_stage(retry_state)
+                # Insert more actions here.
+
+        Alternatively you can override the default behavior entirely by
+        omitting the `super()` line above.
+
+        In addition, you may wish to customize the **Prepare-to-Retry
+        Actions** for an individual stage by defining a
+        ``_prepare_to_retry_stage_STAGE_NAME`` method, where
+        ``STAGE_NAME`` should be replaced with the name of the stage
+        (the first argument to the :func:`stage` decorator), e.g.:
+
+        .. code-block:: python
+
+            # Particular to the 'test' stage.
+            def _prepare_to_retry_stage_test(
+                self,
+                retry_state: RetryCallState
+            ) -> None:
+                self._prepare_to_retry_stage(retry_state)  # Optional
+                # Insert more actions here.
+
+        This can be useful if, e.g., you need to reset some state before
+        running a particular stage again.
+
+        Args:
+            retry_state:  Information regarding the retry operation in
+                progress.
+        """
+        self.console.log(
+            f"[bold yellow]Preparing to retry the '{self.current_stage}' "
+            f"stage...[/]\n{retry_state}"
+        )
+
+    def _handle_stage_retry_error(
+        self,
+        retry: Retrying
+    ) -> None:
+        """
+        When a stage has exhausted the specified retry conditions,
+        handle the thrown :class:`RetryError` appropriately.
+
+        If subclass developers wish to extend the **Retry Error
+        Handler**, they can do so with the following:
+
+        .. code-block:: python
+
+            def _handle_stage_retry_error(
+                self,
+                retry: Retrying
+            ) -> None:
+                super()._handle_stage_retry_error(retry)
+                # Insert more actions here.
+
+        Alternatively you can override the default behavior entirely by
+        omitting the `super()` line above.
+
+        In addition, you may wish to customize the **Retry Error
+        Handler** for an individual stage by defining a
+        ``_handle_stage_retry_error_STAGE_NAME`` method, where
+        ``STAGE_NAME`` should be replaced with the name of the stage
+        (the first argument to the :func:`stage` decorator), e.g.:
+
+        .. code-block:: python
+
+            # Particular to the 'test' stage.
+            def _handle_stage_retry_error_test(
+                self,
+                retry: Retrying
+            ) -> None:
+                self._handle_stage_retry_error(retry)  # Optional
+                # Insert more actions here.
+
+        Args:
+            retry:  The :class:`Retrying` controller, which contains
+                information about the retrying that was done.
+        """
+        retry_attempts = getattr(
+            self,
+            f"{self.current_stage}_retry_attempts",
+            0
+        )
+        if retry_attempts > 0:
+            stage_time = timedelta(
+                seconds=retry.statistics["delay_since_first_attempt"]
+            )
+            self.console.log(self.print_heading(
+                f"Abandoning retrying the '{self.current_stage}' stage.  "
+                f"Total attempts:  {retry.statistics['attempt_number']}.  "
+                f"Total time:  {stage_time}.",
+                color="red"
+            ))
+
     @staticmethod
     def stage(
         stage_name: str,
@@ -392,13 +504,21 @@ class DriverScript:
             A series of commands to run after a stage has technically
             wrapped up.  See :func:`_run_post_stage_actions`.
 
-        Note:
-            The reason there's a distinction between pre- and
-            begin-stage actions, and end- and post-stage actions, is to
-            prepare for adding stage retry functionality.  Begin, body,
-            and end will happen in a retry loop, and pre and post will
-            happen before and after any retrying.
-            TODO:  REMOVE THIS NOTE AFTER ADDING RETRY FUNCTIONALITY.
+        If a subclass developer writes a function to be wrapped by this
+        decorator such that it raises a :class:`tenacity.TryAgain`
+        exception on certain failure conditions, then there are
+        additional **Prepare-to-Retry Actions**, which are a series of
+        commands to run before the next attempt at running the stage
+        (see :func:`_prepare_to_retry_stage`).  The **Begin-Stage
+        Actions**, **Stage Body**, and **End-Stage Actions** are wrapped
+        in this retry loop, while the **Pre-** and **Post-Stage
+        Actions** are not.
+
+        If the retry specifications (see :func:`parser`) are exhausted
+        and the wrapped function still raises a :class:`TryAgain`, then
+        there is a **Retry Error Handler** containing a series of
+        commands to run when exiting the retry loop (see
+        :func:`_handle_stage_retry_error`).
 
         Args:
             stage_name:  The name of the stage, which must consist of
@@ -472,7 +592,24 @@ class DriverScript:
                 """
                 self.current_stage = stage_name
                 get_phase_method(self, "_run_pre_stage_actions")()
-                run_retryable_phases(self, *args, **kwargs)
+                timeout = getattr(self, f"{stage_name}_retry_timeout")
+                attempts = getattr(self, f"{stage_name}_retry_attempts")
+                delay = getattr(self, f"{stage_name}_retry_delay")
+                stop_after_timeout = stop_after_delay(timeout)
+                stop_after_max_attempts = stop_after_attempt(attempts + 1)
+                retry = Retrying(
+                    retry=retry_if_exception_type(TryAgain),
+                    stop=(stop_after_timeout | stop_after_max_attempts),
+                    wait=wait_fixed(delay),
+                    before_sleep=get_phase_method(
+                        self,
+                        "_prepare_to_retry_stage"
+                    )
+                )
+                try:
+                    retry(run_retryable_phases, self, *args, **kwargs)
+                except RetryError:
+                    get_phase_method(self, "_handle_stage_retry_error")(retry)
                 get_phase_method(self, "_run_post_stage_actions")()
 
             return wrapper
