@@ -198,6 +198,7 @@ def test_run(
     assert command in ds.commands_executed
 
 
+@pytest.mark.parametrize("script_success", [True, False])
 @pytest.mark.parametrize(
     "extras",
     [
@@ -215,6 +216,7 @@ def test_run(
 def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,
     extras: dict[str, str] | None,
+    script_success: bool,
     ds: DriverScript,
     capsys: pytest.CaptureFixture
 ) -> None:
@@ -232,17 +234,24 @@ def test_print_script_execution_summary(
         )
     ]  # yapf: disable
     ds.commands_executed = ["foo", "bar", "baz"]
+    ds.script_success = script_success
     if extras is None:
         ds.print_script_execution_summary()
     else:
         ds.print_script_execution_summary(extra_sections=extras)
     captured = capsys.readouterr()
-    headings = ["Ran the following", "Commands executed", "Timing results"]
+    headings = [
+        "Ran the following",
+        "Commands executed",
+        "Timing results",
+        "Script result"
+    ]
     details = (
         [mock_get_pretty_command_line_invocation.return_value]
         + ds.commands_executed
         + [_.stage for _ in ds.durations]
         + [str(_.duration) for _ in ds.durations]
+        + ["Success" if script_success else "Failure"]
     )  # yapf: disable
     if extras is not None:
         headings += list(extras.keys())
