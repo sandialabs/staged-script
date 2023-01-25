@@ -86,6 +86,8 @@ class DriverScript:
         retry_arg_group (argparse._ArgumentGroup):  A container within
             the :class:`ArgumentParser` holding all the arguments
             associated with retrying stages.
+        script_success (bool):  Subclass developers can toggle this
+            attribute to indicate whether the script has succeeded.
         stage_start_time (datetime):  The time at which a stage began.
         stages_to_run (set[str]):  Which stages to run.
         start_time (datetime):  The time at which this object was
@@ -143,6 +145,7 @@ class DriverScript:
         self.current_stage = "CURRENT STAGE NOT SET"
         self.dry_run = False
         self.durations: list[StageDuration] = []
+        self.script_success = True
         self.stage_start_time = datetime.now()
         self.stages_to_run: set[str] = set()
         self.start_time = datetime.now()
@@ -908,10 +911,14 @@ for details.
         sections = {
             "Ran the following": unparser.get_pretty_command_line_invocation(),
             "Commands executed": "\n".join(self.commands_executed),
-            "Timing results": self.get_timing_report()
+            "Timing results": self.get_timing_report(),
+            "Script result": (
+                "[bold green]Success" if self.script_success
+                else "[bold red]Failure"
+            )
         }
         if extra_sections is not None:
-            sections.update(extra_sections)
+            sections |= extra_sections
         items = [""]
         for section, details in sections.items():
             items.extend([f"➤ {section}:", Padding(details, (1, 0, 1, 4))])
