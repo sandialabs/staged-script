@@ -7,6 +7,7 @@ import sys
 from argparse import ArgumentParser, Namespace
 from datetime import datetime, timedelta
 from pathlib import Path
+from subprocess import CompletedProcess
 from typing import Callable, NamedTuple
 
 import __main__
@@ -853,7 +854,7 @@ for details.
         command: str,
         pretty_print: bool = False,
         **kwargs
-    ) -> subprocess.CompletedProcess:
+    ) -> CompletedProcess:
         """
         Run a command in the underlying shell.
 
@@ -868,6 +869,15 @@ for details.
         Returns:
             The result from calling :func:`subprocess.run()`.
         """
+        if self.dry_run:
+            self.print_dry_run_message(
+                f"The command executed would be:  `{command}`"
+            )
+            return CompletedProcess(
+                args=f"echo {command}",
+                returncode=0,
+                stdout=command
+            )
         self.commands_executed.append(
             self.pretty_print_command(command) if pretty_print else command
         )
