@@ -884,6 +884,22 @@ for details.
         self.console.log(f"Executing:  {command}")
         return subprocess.run(command, **kwargs)
 
+    def raise_parser_error(self, message):
+        """
+        Exit the script with a message indicating what went wrong when
+        parsing the command line arguments.
+
+        Args:
+            message:  What went wrong.
+
+        Raises:
+            SystemExit:  To indicate the problem and stop script
+                execution.
+        """
+        self.parser.print_help()
+        self.console.print(f"[yellow]\n{message}")
+        raise SystemExit(1)
+
     def print_script_execution_summary(
         self,
         extra_sections: dict[str, str] | None = None
