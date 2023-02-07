@@ -22,7 +22,10 @@ from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 
 sys.path.append(str(Path(__file__).resolve().parents[3] / "python"))
-from reverse_argparse import ReverseArgumentParser  # noqa: E402
+from reverse_argparse import (  # noqa: E402
+    ReverseArgumentParser,
+    quote_arg_if_necessary
+)
 
 rich.traceback.install()
 
@@ -663,25 +666,6 @@ class DriverScript:
         """
         return len(args) > 1 and args[1].startswith("-")
 
-    @staticmethod
-    def _quote_arg(arg: str) -> str:
-        """
-        If an argument to a command has any spaces in it, surround it in
-        single quotes.  If no quotes are necessary, don't change the
-        argument.
-
-        Args:
-            arg:  The command line argument.
-
-        Returns:
-            The (possibly) quoted argument.
-        """
-        spaces_in_string = re.compile(r"(.*\s.*)")
-        return (
-            spaces_in_string.sub(r"'\1'", arg)
-            if spaces_in_string.search(arg) else arg
-        )  # yapf: disable
-
     def pretty_print_command(self, command: str, indent: int = 4) -> str:
         """
         Take a command executed in the shell and pretty-print it by
@@ -709,7 +693,9 @@ class DriverScript:
                     or len(args) == 1):  # yapf: disable
                 lines.append(args.pop(0))
             else:
-                lines.append(f"{args.pop(0)} {self._quote_arg(args.pop(0))}")
+                lines.append(
+                    f"{args.pop(0)} {quote_arg_if_necessary(args.pop(0))}"
+                )
         return (" \\\n" + " "*indent).join(lines)
 
     @lazy_property
