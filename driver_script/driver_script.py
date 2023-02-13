@@ -87,6 +87,8 @@ class DriverScript:
             how long it took for each to run.  This is implemented as a
             ``list`` of named tuples instead of as a ``dict`` to allow
             the flexibility for stages to be run multiple times.
+        print_commands (bool):  Whether to print the commands executed
+            immediately before executing them.
         retry_arg_group (argparse._ArgumentGroup):  A container within
             the :class:`ArgumentParser` holding all the arguments
             associated with retrying stages.
@@ -123,7 +125,8 @@ class DriverScript:
     def __init__(
         self,
         console_force_terminal: bool | None = None,
-        console_log_path: bool = True
+        console_log_path: bool = True,
+        print_commands: bool = True
     ):
         """
         Initialize a :class:`DriverScript` object.
@@ -133,6 +136,8 @@ class DriverScript:
                 behave like a terminal.  ``None`` allows auto-detection.
             console_log_path:  Whether to print the location within a
                 file that generated a line in the console log.
+            print_commands:  Whether to print the commands executed
+                immediately before executing them.
 
         Note:
             If you override this constructor in a subclass---e.g., to
@@ -149,6 +154,7 @@ class DriverScript:
         self.current_stage = "CURRENT STAGE NOT SET"
         self.dry_run = False
         self.durations: list[StageDuration] = []
+        self.print_commands = print_commands
         self.script_success = True
         self.stage_start_time = datetime.now()
         self.stages_to_run: set[str] = set()
@@ -839,6 +845,7 @@ for details.
         self,
         command: str,
         pretty_print: bool = False,
+        print_command: bool | None = None,
         **kwargs
     ) -> CompletedProcess:
         """
@@ -849,6 +856,10 @@ for details.
             pretty_print:  Whether the command should be
                 "pretty-printed" when storing it in the list of commands
                 executed.
+            print_command:  Whether to print the command executed
+                immediately before executing it.  If specified, this
+                overrides the :attr:`print_commands` specified when
+                instantiating the class.
             kwargs:  Additional keyword arguments to pass on to
                 :func:`subprocess.run`.
 
@@ -867,7 +878,11 @@ for details.
         self.commands_executed.append(
             self.pretty_print_command(command) if pretty_print else command
         )
-        self.console.log(f"Executing:  {command}")
+        if (
+            print_command is True
+            or (print_command is None and self.print_commands is True)
+        ):
+            self.console.log(f"Executing:  {command}")
         return subprocess.run(command, **kwargs)
 
     def raise_parser_error(self, message):

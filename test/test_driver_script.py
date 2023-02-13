@@ -184,18 +184,41 @@ def test_parse_args(ds: DriverScript) -> None:
     assert ds.stages_to_run == {"first", "third"}
 
 
+@pytest.mark.parametrize("print_commands", [True, False])
 @patch("subprocess.run")
 def test_run(
+    mock_run: MagicMock,
+    print_commands: bool,
+    ds: DriverScript,
+    capsys: pytest.CaptureFixture
+) -> None:
+    command = "echo 'hello world'"
+    mock_run.return_value = CompletedProcess(args=command, returncode=0)
+    ds.print_commands = print_commands
+    ds.run(command)
+    captured = capsys.readouterr()
+    if print_commands:
+        assert f"Executing:  {command}" in captured.out
+    else:
+        assert f"Executing:  {command}" not in captured.out
+    assert command in ds.commands_executed
+
+
+@patch("subprocess.run")
+def test_run_override_print_commands(
     mock_run: MagicMock,
     ds: DriverScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     command = "echo 'hello world'"
     mock_run.return_value = CompletedProcess(args=command, returncode=0)
-    ds.run(command)
+    ds.run(command, print_command=False)
     captured = capsys.readouterr()
-    assert all(_ in captured.out for _ in ["Executing", command])
-    assert command in ds.commands_executed
+    assert f"Executing:  {command}" not in captured.out
+    ds.print_commands = False
+    ds.run(command, print_command=True)
+    captured = capsys.readouterr()
+    assert f"Executing:  {command}" in captured.out
 
 
 @pytest.mark.parametrize("script_success", [True, False])
