@@ -781,7 +781,8 @@ for details.
         )
         if self.stages:
             self.retry_arg_group = ap.add_argument_group(
-                "Options for retrying stages"
+                "retry",
+                "Additional options for retrying stages."
             )
             for stage in self.stages:
                 retry_attempts = self.retry_arg_group.add_argument(
