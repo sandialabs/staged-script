@@ -4,7 +4,12 @@ import re
 import shlex
 import subprocess
 import sys
-from argparse import ArgumentParser, Namespace
+from argparse import (
+    ArgumentDefaultsHelpFormatter,
+    ArgumentParser,
+    Namespace,
+    RawDescriptionHelpFormatter
+)
 from datetime import datetime, timedelta
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -59,6 +64,18 @@ def lazy_property(func: Callable) -> property:
 class StageDuration(NamedTuple):
     stage: str
     duration: timedelta
+
+
+class HelpFormatter(
+    ArgumentDefaultsHelpFormatter,
+    RawDescriptionHelpFormatter
+):
+    """
+    Define a formatter class to be used by the argument parser that both
+    treats the description as raw text (doesn't do any automatic
+    formatting) and shows default values arguments.
+    """
+    pass
 
 
 class DriverScript:
@@ -724,14 +741,19 @@ class DriverScript:
                 ap.set_defaults(stage=self.stages)
                 return ap
 
-        The formatter class can optionally be set to something other
-        than the default, and if you'd like to set the default value for
-        the ``--stage`` argument, you can use :func:`set_defaults` (the
-        example above defaults to running all the stages in the order in
-        which they were defined).  Similarly, if you wish to override
-        the default values for the retry arguments that are
-        automatically provided for every stage, you can do so with,
-        e.g.:
+        The formatter class defaults to a combination of
+        :class:`ArgumentDefaultsHelpFormatter` and
+        :class:`RawDescriptionHelpFormatter`, but can optionally be set
+        to whatever you like.
+
+        If you'd like to set the default value for the ``--stage``
+        argument, you can use :func:`set_defaults` (the example above
+        defaults to all the stages in the order in which they were
+        defined).
+
+        Similarly, if you wish to override the default values for the
+        retry arguments that are automatically provided for every stage,
+        you can do so with, e.g.:
 
         .. code-block:: python
 
@@ -761,12 +783,15 @@ class DriverScript:
         Returns:
             The base argument parser.
         """
-        description = """
-This is the description of the ArgumentParser in the DriverScript base
-class.  This should be overridden in your subclass.  See the docstring
-for details.
-"""
-        ap = ArgumentParser(description=description)
+        description = (
+            "This is the description of the ArgumentParser in the "
+            "DriverScript base class.  This should be overridden in your "
+            "subclass.  See the docstring for details."
+        )
+        ap = ArgumentParser(
+            description=description,
+            formatter_class=HelpFormatter
+        )
         ap.add_argument(
             "--stage",
             choices=self.stages,
