@@ -281,3 +281,20 @@ def test_print_script_execution_summary(
         details += list(extras.values())
     for item in headings + details:
         assert item in captured.out
+
+
+def test_raise_parser_error(
+    ds: DriverScript,
+    capsys: pytest.CaptureFixture
+) -> None:
+    error_message = (
+        "This is a lengthy error message explaining what exactly went wrong, "
+        "where, and why.  It's so long it should get wrapped over multiple "
+        "lines."
+    )
+    with pytest.raises(SystemExit):
+        ds.raise_parser_error(error_message)
+    captured = capsys.readouterr()
+    expected = error_message.split() + ["usage:", "--dry-run", "--stage"]
+    for term in expected:
+        assert term in captured.out

@@ -109,6 +109,10 @@ class DriverScript:
         retry_arg_group (argparse._ArgumentGroup):  A container within
             the :class:`ArgumentParser` holding all the arguments
             associated with retrying stages.
+        script_name (str):  The name of the script (the
+            :class:`DriverScript` subclass) being run.
+        script_stem (str):  Same as :attr:`script_name`, but without the
+            extension.
         script_success (bool):  Subclass developers can toggle this
             attribute to indicate whether the script has succeeded.
         stage_start_time (datetime):  The time at which a stage began.
@@ -172,6 +176,8 @@ class DriverScript:
         self.dry_run = False
         self.durations: list[StageDuration] = []
         self.print_commands = print_commands
+        self.script_name = Path(__main__.__file__).name
+        self.script_stem = Path(__main__.__file__).stem
         self.script_success = True
         self.stage_start_time = datetime.now()
         self.stages_to_run: set[str] = set()
@@ -975,7 +981,7 @@ class DriverScript:
         items = [""]
         for section, details in sections.items():
             items.extend([f"➤ {section}:", Padding(details, (1, 0, 1, 4))])
-        title = f"{Path(__main__.__file__).name} Script Execution Summary"
+        title = f"{self.script_name} Script Execution Summary"
         self.console.rule(title)
         self.console.log(Group(*items))
         self.console.rule(f"End {title}")
