@@ -66,6 +66,10 @@ class StageDuration(NamedTuple):
     duration: timedelta
 
 
+class RetryStage(TryAgain):
+    pass
+
+
 class HelpFormatter(
     ArgumentDefaultsHelpFormatter,
     RawDescriptionHelpFormatter
@@ -541,18 +545,18 @@ class DriverScript:
             wrapped up.  See :func:`_run_post_stage_actions`.
 
         If a subclass developer writes a function to be wrapped by this
-        decorator such that it raises a :class:`tenacity.TryAgain`
-        exception on certain failure conditions, then there are
-        additional **Prepare-to-Retry Actions**, which are a series of
-        commands to run before the next attempt at running the stage
-        (see :func:`_prepare_to_retry_stage`).  The **Begin-Stage
-        Actions**, **Stage Body**, and **End-Stage Actions** are wrapped
-        in this retry loop, while the **Pre-** and **Post-Stage
-        Actions** are not.
+        decorator such that it raises a :class:`RetryStage` exception on
+        certain failure conditions, then there are additional
+        **Prepare-to-Retry Actions**, which are a series of commands to
+        run before the next attempt at running the stage (see
+        :func:`_prepare_to_retry_stage`).  The **Begin-Stage Actions**,
+        **Stage Body**, and **End-Stage Actions** are wrapped in this
+        retry loop, while the **Pre-** and **Post-Stage Actions** are
+        not.
 
         If the retry specifications (see :func:`parser`) are exhausted
-        and the wrapped function still raises a :class:`TryAgain`, then
-        there is a **Retry Error Handler** containing a series of
+        and the wrapped function still raises a :class:`RetryStage`,
+        then there is a **Retry Error Handler** containing a series of
         commands to run when exiting the retry loop (see
         :func:`_handle_stage_retry_error`).
 
@@ -634,7 +638,7 @@ class DriverScript:
                 stop_after_timeout = stop_after_delay(timeout)
                 stop_after_max_attempts = stop_after_attempt(attempts + 1)
                 retry = Retrying(
-                    retry=retry_if_exception_type(TryAgain),
+                    retry=retry_if_exception_type(RetryStage),
                     stop=(stop_after_timeout | stop_after_max_attempts),
                     wait=wait_fixed(delay),
                     before_sleep=get_phase_method(
@@ -770,8 +774,8 @@ class DriverScript:
             )
 
         If you wish to suppress the stage retry arguments for your
-        stages that don't raise a :class:`tenacity.TryAgain` exception,
-        you can do so with, e.g.:
+        stages that don't raise a :class:`RetryStage` exception, you can
+        do so with, e.g.:
 
         .. code-block:: python
 
