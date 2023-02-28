@@ -965,7 +965,7 @@ class DriverScript:
             ) -> None:
                 extras = {"Additional section": "With some details."}
                 if extra_sections is not None:
-                    extras.update(extra_sections)
+                    extras |= extra_sections
                 super().print_script_execution_summary(
                     extra_sections=extras
                 )
