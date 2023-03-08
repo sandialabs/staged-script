@@ -143,9 +143,9 @@ class DriverScript:
       developers can modify it if needed.
 
     Class Variables:
-        stages (list[str]):  The stages defined for the script.
+        stages (set[str]):  The stages defined for the script.
     """
-    stages: list[str] = []
+    stages: set[str] = set()
 
     def __init__(
         self,
@@ -220,12 +220,6 @@ class DriverScript:
         """
         Add a new stage to the list of stages.
 
-        Note:
-            The `stages` class variable is conceptually an ordered set,
-            but Python doesn't have support for such a collection, so
-            it's implemented as a value-less `dict` converted to a
-            `list`.
-
         Todo:
             It'd be great to raise a ``ValueError`` if the
             :arg:`stage_name` is already in ``__class__.stages``.  This
@@ -256,7 +250,7 @@ class DriverScript:
                 f"'{stage_name}' stage.  Stage names within a 'DriverScript' "
                 "subclass must be unique."
             )
-        __class__.stages = list(dict.fromkeys(__class__.stages + [stage_name]))
+        __class__.stages.add(stage_name)
 
     def _run_pre_stage_actions(self) -> None:
         """

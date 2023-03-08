@@ -33,11 +33,11 @@ def test_print_dry_run_message(
 
 def test__add_stage(capsys: pytest.CaptureFixture) -> None:
     stages_before = DriverScript.stages
-    DriverScript.stages = []
+    DriverScript.stages = set()
     DriverScript._add_stage("first")
     DriverScript._add_stage("second")
     DriverScript._add_stage("first")
-    assert DriverScript.stages == ["first", "second"]
+    assert DriverScript.stages == {"first", "second"}
     captured = capsys.readouterr()
     assert "you're redefining the 'first' stage" in captured.out
     DriverScript.stages = stages_before
