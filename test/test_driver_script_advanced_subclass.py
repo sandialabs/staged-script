@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import shlex
 
+import pytest
+from rich.console import Console
 from tenacity import RetryCallState, Retrying, TryAgain
 
 from python.driver_script.driver_script.driver_script import DriverScript
-import pytest
 
 
 class MyAdvancedScript(DriverScript):
@@ -40,9 +41,11 @@ class MyAdvancedScript(DriverScript):
         print("inside '_prepare_to_retry_stage' function")
 
 
-# Force the correct `stages` to get around a problem with how `pytest`
-# runs against all these files at once in CI.
-MyAdvancedScript.stages = ["test"]
+@pytest.fixture()
+def mas() -> MyAdvancedScript:
+    my_advanced_script = MyAdvancedScript({"test"})
+    my_advanced_script.console = Console(log_time=False, log_path=False)
+    return my_advanced_script
 
 
 def ensure_phase_comes_next(
@@ -71,32 +74,32 @@ def test_stage(
     custom_skip_stage: bool,
     custom_end_stage: bool,
     custom_post_stage: bool,
+    mas: MyAdvancedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
-    script = MyAdvancedScript()
-    script.parse_args([])
-    script.stages_to_run = stages_to_run
+    mas.parse_args([])
+    mas.stages_to_run = stages_to_run
     if custom_pre_stage:
-        script._run_pre_stage_actions_test = (
+        mas._run_pre_stage_actions_test = (
             lambda: print("inside '_run_pre_stage_actions_test' function")
         )
     if custom_begin_stage:
-        script._begin_stage_test = (
+        mas._begin_stage_test = (
             lambda heading: print("inside '_begin_stage_test' function")
         )
     if custom_skip_stage:
-        script._skip_stage_test = (
+        mas._skip_stage_test = (
             lambda: print("inside '_skip_stage_test' function")
         )
     if custom_end_stage:
-        script._end_stage_test = (
+        mas._end_stage_test = (
             lambda: print("inside '_end_stage_test' function")
         )
     if custom_post_stage:
-        script._run_post_stage_actions_test = (
+        mas._run_post_stage_actions_test = (
             lambda: print("inside '_run_post_stage_actions_test' function")
         )
-    script.run_test()
+    mas.run_test()
     captured = capsys.readouterr()
     index = 0
     phases = [
@@ -123,22 +126,22 @@ def test_stage_retry(
     custom_prepare_to_retry: bool,
     custom_handle_retry_error: bool,
     retry_attempts: int,
+    mas: MyAdvancedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
-    script = MyAdvancedScript()
-    script.parse_args(shlex.split(f"--test-retry-attempts {retry_attempts}"))
-    script.stages_to_run = {"test"}
+    mas.parse_args(shlex.split(f"--test-retry-attempts {retry_attempts}"))
+    mas.stages_to_run = {"test"}
     if custom_prepare_to_retry:
-        script._prepare_to_retry_stage_test = (
+        mas._prepare_to_retry_stage_test = (
             lambda retry_state:
                 print("inside '_prepare_to_retry_stage_test' function")
         )
     if custom_handle_retry_error:
-        script._handle_stage_retry_error_test = (
+        mas._handle_stage_retry_error_test = (
             lambda retry:
                 print("inside '_handle_stage_retry_error_test' function")
         )
-    script.run_test(retry=True)
+    mas.run_test(retry=True)
     captured = capsys.readouterr()
     index = 0
     phases = [

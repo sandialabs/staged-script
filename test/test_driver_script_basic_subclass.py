@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-from python.driver_script.driver_script.driver_script import DriverScript
 import pytest
+from rich.console import Console
+
+from python.driver_script.driver_script.driver_script import DriverScript
 
 
 class MyBasicScript(DriverScript):
@@ -16,20 +18,22 @@ class MyBasicScript(DriverScript):
         print("Got past error.")
 
 
-# Force the correct `stages` to get around a problem with how `pytest`
-# runs against all these files at once in CI.
-MyBasicScript.stages = ["good", "bad"]
+@pytest.fixture()
+def mbs() -> MyBasicScript:
+    my_basic_script = MyBasicScript({"good", "bad"})
+    my_basic_script.console = Console(log_time=False, log_path=False)
+    return my_basic_script
 
 
 @pytest.mark.parametrize("stages_to_run", [{"good"}, set()])
 def test_good_stage(
     stages_to_run: set[str],
+    mbs: MyBasicScript,
     capsys: pytest.CaptureFixture
 ) -> None:
-    script = MyBasicScript()
-    script.parse_args([])
-    script.stages_to_run = stages_to_run
-    script.run_good_stage()
+    mbs.parse_args([])
+    mbs.stages_to_run = stages_to_run
+    mbs.run_good_stage()
     captured = capsys.readouterr()
 
     # Ensure `_begin_stage()` is called.
@@ -46,17 +50,20 @@ def test_good_stage(
 
 
 @pytest.mark.parametrize("error", [True, False])
-def test_bad_stage(error: bool, capsys: pytest.CaptureFixture) -> None:
-    script = MyBasicScript()
-    script.parse_args([])
-    script.stages_to_run = {"bad"}
+def test_bad_stage(
+    error: bool,
+    mbs: MyBasicScript,
+    capsys: pytest.CaptureFixture
+) -> None:
+    mbs.parse_args([])
+    mbs.stages_to_run = {"bad"}
     if error:
         with pytest.raises(RuntimeError) as e:
-            script.run_bad_stage(error)
+            mbs.run_bad_stage(error)
         msg = e.value.args[0]
         assert "Something went wrong." in msg
     else:
-        script.run_bad_stage(error)
+        mbs.run_bad_stage(error)
     captured = capsys.readouterr()
 
     # Ensure `_begin_stage()` is called.
@@ -73,9 +80,8 @@ def test_bad_stage(error: bool, capsys: pytest.CaptureFixture) -> None:
 
 
 @pytest.mark.parametrize("stage", ["good", "bad"])
-def test_parser_retry_options(stage: str) -> None:
-    script = MyBasicScript()
-    help_text = script.parser.format_help()
+def test_parser_retry_options(stage: str, mbs: MyBasicScript) -> None:
+    help_text = mbs.parser.format_help()
     assert f"--{stage}-retry-attempts" in help_text
     assert f"--{stage}-retry-delay" in help_text
     assert f"--{stage}-retry-timeout" in help_text

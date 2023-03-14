@@ -15,7 +15,7 @@ from python.driver_script.driver_script.driver_script import (
 
 @pytest.fixture()
 def ds() -> DriverScript:
-    driver_script = DriverScript()
+    driver_script = DriverScript(set())
     driver_script.console = Console(log_time=False, log_path=False)
     return driver_script
 
@@ -31,25 +31,17 @@ def test_print_dry_run_message(
     assert expected in captured.out
 
 
-def test__add_stage(capsys: pytest.CaptureFixture) -> None:
-    stages_before = DriverScript.stages
-    DriverScript.stages = set()
-    DriverScript._add_stage("first")
-    DriverScript._add_stage("second")
-    DriverScript._add_stage("first")
-    assert DriverScript.stages == {"first", "second"}
-    captured = capsys.readouterr()
-    assert "you're redefining the 'first' stage" in captured.out
-    DriverScript.stages = stages_before
+def test_validate_stage_name() -> None:
+    DriverScript.validate_stage_name("valid")
 
 
 @pytest.mark.parametrize(
     "stage_name",
     ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
 )  # yapf: disable
-def test__add_stage_raises(stage_name: str) -> None:
+def test_validate_stage_name_raises(stage_name: str) -> None:
     with pytest.raises(ValueError) as e:
-        DriverScript._add_stage(stage_name)
+        DriverScript.validate_stage_name(stage_name)
     msg = e.value.args[0]
     assert f"'{stage_name}' must contain only lowercase letters" in msg
 
@@ -178,7 +170,7 @@ def test_pretty_print_command(
 
 
 def test_parse_args(ds: DriverScript) -> None:
-    ds.stages = ["first", "second", "third"]
+    ds.stages = {"first", "second", "third"}
     ds.parse_args(shlex.split("--dry-run --stage first third"))
     assert ds.dry_run is True
     assert ds.stages_to_run == {"first", "third"}

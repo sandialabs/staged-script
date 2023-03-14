@@ -120,12 +120,15 @@ class DriverScript:
         script_success (bool):  Subclass developers can toggle this
             attribute to indicate whether the script has succeeded.
         stage_start_time (datetime):  The time at which a stage began.
-        stages_to_run (set[str]):  Which stages to run.
+        stages (set[str]):  The stages registered for an instantiation
+            of a :class:`DriverScript` subclass.
+        stages_to_run (set[str]):  Which stages to run, as specified by
+            the user via the command line arguments.
         start_time (datetime):  The time at which this object was
             initialized.
 
     Note that additional attributes are automatically generated for each
-    ``stage`` defined by a subclass:
+    ``stage`` registered for a subclass object:
     * ``STAGE_NAME_retry_attempts`` (int):  The number of times to
       attempt retrying the ``STAGE_NAME`` stage.
     * ``STAGE_NAME_retry_attempts_arg`` (argparse.Action):  The
@@ -141,14 +144,11 @@ class DriverScript:
     * ``STAGE_NAME_retry_timeout_arg`` (argparse.Action):  The
       corresponding argument in the :class:`ArgumentParser`, so subclass
       developers can modify it if needed.
-
-    Class Variables:
-        stages (set[str]):  The stages defined for the script.
     """
-    stages: set[str] = set()
 
     def __init__(
         self,
+        stages: set[str],
         console_force_terminal: bool | None = None,
         console_log_path: bool = True,
         print_commands: bool = True
@@ -157,6 +157,9 @@ class DriverScript:
         Initialize a :class:`DriverScript` object.
 
         Args:
+            stages:  The set of stages to register for a
+                :class:`DriverScript` subclass.  This may be a subset of
+                all the stages defined in the subclass.
             console_force_terminal:  Whether to force the console to
                 behave like a terminal.  ``None`` allows auto-detection.
             console_log_path:  Whether to print the location within a
@@ -167,9 +170,11 @@ class DriverScript:
         Note:
             If you override this constructor in a subclass---e.g., to
             create additional attributes, etc.---you'll need to call
-            this parent constructor with ``super().__init__()`` and
-            optionally pass in any arguments.
+            this parent constructor with ``super().__init__(stages)``
+            and optionally pass in additional arguments.
         """
+        for stage in stages:
+            self.validate_stage_name(stage)
         self.args = Namespace()
         self.commands_executed: list[str] = []
         self.console = Console(
@@ -184,8 +189,29 @@ class DriverScript:
         self.script_stem = Path(__main__.__file__).stem
         self.script_success = True
         self.stage_start_time = datetime.now()
+        self.stages = stages
         self.stages_to_run: set[str] = set()
         self.start_time = datetime.now()
+
+    @staticmethod
+    def validate_stage_name(stage_name: str) -> None:
+        """
+        Ensure the stage name consists of only lowercase letters.  This
+        is both to simplify implementation details within the class, and
+        to provide the best user experience for users of your
+        :class:`DriverScript` subclasses.
+
+        Args:
+            stage_name:  The name of the stage.
+
+        Raises:
+            ValueError:  If the stage name is invalid.
+        """
+        if not re.match("^[a-z]+$", stage_name):
+            raise ValueError(
+                f"Stage name {stage_name!r} must contain only lowercase "
+                "letters."
+            )
 
     def print_heading(self, message: str, *, color: str = "cyan") -> None:
         """
@@ -214,43 +240,6 @@ class DriverScript:
                 (0, 0, 0, indent)
             )
         )  # yapf: disable
-
-    @staticmethod
-    def _add_stage(stage_name: str) -> None:
-        """
-        Add a new stage to the list of stages.
-
-        Todo:
-            It'd be great to raise a ``ValueError`` if the
-            :arg:`stage_name` is already in ``__class__.stages``.  This
-            is possible, but it causes problems with ``pytest``, which
-            will double-import this module in two different scopes---one
-            from the ``__init__.py``, and the other from the test file.
-            I haven't yet figured out a workaround other than to tell
-            the user to ensure they use unique stage names.
-
-        Args:
-            stage_name:  The name of the stage, which must consist of
-                only lowercase letters, both to simplify implementation
-                details elsewhere in the class, and to provide the best
-                user experience for users of your :class:`DriverScript`
-                subclasses.
-
-        Raises:
-            RuntimeError:  If the stage name is invalid.
-        """
-        if not re.match("^[a-z]+$", stage_name):
-            raise ValueError(
-                f"Stage name '{stage_name}' must contain only lowercase "
-                "letters."
-            )
-        if stage_name in __class__.stages:
-            print(
-                "Warning:  It looks like you're redefining the "
-                f"'{stage_name}' stage.  Stage names within a 'DriverScript' "
-                "subclass must be unique."
-            )
-        __class__.stages.add(stage_name)
 
     def _run_pre_stage_actions(self) -> None:
         """
@@ -509,10 +498,7 @@ class DriverScript:
             ))
 
     @staticmethod
-    def stage(
-        stage_name: str,
-        heading: str
-    ) -> Callable:
+    def stage(stage_name: str, heading: str) -> Callable:
         """
         A decorator to take a function and convert it to a conceptual
         stage of a script.  Each stage consists of the following phases:
@@ -562,7 +548,7 @@ class DriverScript:
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """
-        __class__._add_stage(stage_name)
+        __class__.validate_stage_name(stage_name)
 
         def decorator(func: Callable) -> Callable:
 
@@ -752,8 +738,8 @@ class DriverScript:
 
         If you'd like to set the default value for the ``--stage``
         argument, you can use :func:`set_defaults` (the example above
-        defaults to all the stages in the order in which they were
-        defined).
+        defaults to all the stages registered when the subclass was
+        instantiated.
 
         Similarly, if you wish to override the default values for the
         retry arguments that are automatically provided for every stage,
