@@ -62,11 +62,19 @@ def lazy_property(func: Callable) -> property:
 
 
 class StageDuration(NamedTuple):
+    """
+    Define a mapping from stage names to how long they took to run.  See
+    :attr:`DriverScript.durations` for details.
+    """
     stage: str
     duration: timedelta
 
 
 class RetryStage(TryAgain):
+    """
+    Define an exception to be raised by subclass developers to indicate
+    that a stage should be retried.
+    """
     pass
 
 
@@ -77,7 +85,7 @@ class HelpFormatter(
     """
     Define a formatter class to be used by the argument parser that both
     treats the description as raw text (doesn't do any automatic
-    formatting) and shows default values arguments.
+    formatting) and shows default values of arguments.
     """
     pass
 
@@ -89,10 +97,10 @@ class DriverScript:
     fundamental concept of a "stage", in that such scripts are typically
     broken down into stages, each of which consists of a handful of
     commands.  Certain actions are performed at the beginning or end of
-    any given stage, and it's also possible for stages to be skipped.
-    The class also provides a means of producing a script execution
-    summary to show the user exactly what was done, for the sake of
-    replicability and easing debugging.
+    any given stage, and it's also possible for stages to be skipped or
+    retried.  The class also provides a means of producing a script
+    execution summary to show the user exactly what was done, for the
+    sake of replicability and easing debugging.
 
     Attributes:
         args (Namespace):  The parsed command line arguments for the
@@ -121,7 +129,10 @@ class DriverScript:
             attribute to indicate whether the script has succeeded.
         stage_start_time (datetime):  The time at which a stage began.
         stages (set[str]):  The stages registered for an instantiation
-            of a :class:`DriverScript` subclass.
+            of a :class:`DriverScript` subclass, which are used to
+            automatically populate pieces of the
+            :class:`ArgumentParser`.  This may be a subset of all the
+            stages defined in the subclass.
         stages_to_run (set[str]):  Which stages to run, as specified by
             the user via the command line arguments.
         start_time (datetime):  The time at which this object was
@@ -158,8 +169,10 @@ class DriverScript:
 
         Args:
             stages:  The set of stages to register for a
-                :class:`DriverScript` subclass.  This may be a subset of
-                all the stages defined in the subclass.
+                :class:`DriverScript` subclass, which are used to
+                automatically populate pieces of the
+                :class:`ArgumentParser`.  This may be a subset of all
+                the stages defined in the subclass.
             console_force_terminal:  Whether to force the console to
                 behave like a terminal.  ``None`` allows auto-detection.
             console_log_path:  Whether to print the location within a
@@ -491,7 +504,7 @@ class DriverScript:
                 seconds=retry.statistics["delay_since_first_attempt"]
             )
             self.console.log(self.print_heading(
-                f"Abandoning retrying the '{self.current_stage}' stage.  "
+                f"Abandoning retrying the {self.current_stage!r} stage.  "
                 f"Total attempts:  {retry.statistics['attempt_number']}.  "
                 f"Total time:  {stage_time}.",
                 color="red"
@@ -535,9 +548,9 @@ class DriverScript:
         not.
 
         If the retry specifications (see :func:`parser`) are exhausted
-        and the wrapped function still raises a :class:`RetryStage`,
-        then there is a **Retry Error Handler** containing a series of
-        commands to run when exiting the retry loop (see
+        and the wrapped function still raises a :class:`RetryStage`
+        exception, then there is a **Retry Error Handler** containing a
+        series of commands to run when exiting the retry loop (see
         :func:`_handle_stage_retry_error`).
 
         Args:
@@ -583,13 +596,13 @@ class DriverScript:
 
                 Args:
                     args: The positional arguments to pass on to the
-                        phase method.
+                        stage body method (the method decorated).
                     kwargs: The keyword arguments to pass on to the
-                        phase method.
+                        stage body method (the method decorated).
 
                 Raises:
                     Exception:  If an exception is thrown in the stage
-                        body function, it will be caught such that the
+                        body method, it will be caught such that the
                         end-stage actions can be run, but then it will
                         be re-raised so it can propagate upward.
                 """
@@ -804,7 +817,7 @@ class DriverScript:
                     f"--{stage}-retry-attempts",
                     default=0,
                     type=int,
-                    help=f"How many times to retry the '{stage}' stage."
+                    help=f"How many times to retry the {stage!r} stage."
                 )
                 setattr(self, f"{stage}_retry_attempts_arg", retry_attempts)
                 retry_delay = self.retry_arg_group.add_argument(
@@ -812,7 +825,7 @@ class DriverScript:
                     default=0,
                     type=float,
                     help="How long to wait (in seconds) before retrying the "
-                    f"'{stage}' stage."
+                    f"{stage!r} stage."
                 )
                 setattr(self, f"{stage}_retry_delay_arg", retry_delay)
                 retry_timeout = self.retry_arg_group.add_argument(
@@ -820,7 +833,7 @@ class DriverScript:
                     default=60,
                     type=int,
                     help="How long to wait (in seconds) before giving up on "
-                    f"retrying the '{stage}' stage."
+                    f"retrying the {stage!r} stage."
                 )
                 setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
         return ap
@@ -828,7 +841,10 @@ class DriverScript:
     def parse_args(self, argv: list[str]) -> None:
         """
         Parse the command line arguments supplied by this base class.
-        This should be overridden in subclasses as follows:
+        The recommendation is to save any arguments, perhaps with some
+        transformations, as attributes of your subclass for ease of
+        access throughout your subclass.  This should be overridden in
+        subclasses as follows:
 
         .. code-block:: python
 
@@ -880,11 +896,11 @@ class DriverScript:
                 :func:`subprocess.run`.
 
         Returns:
-            The result from calling :func:`subprocess.run()`.
+            The result from calling :func:`subprocess.run`.
         """
         if self.dry_run:
             self.print_dry_run_message(
-                f"The command executed would be:  `{command}`"
+                f"The command executed would be:  {command}"
             )
             return CompletedProcess(
                 args=f"echo {command}",
@@ -904,7 +920,8 @@ class DriverScript:
     def raise_parser_error(self, message):
         """
         Exit the script with a message indicating what went wrong when
-        parsing the command line arguments.
+        parsing the command line arguments.  To be used by subclass
+        developers in the midst of :func:`parse_args`.
 
         Args:
             message:  What went wrong.
