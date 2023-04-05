@@ -187,7 +187,7 @@ class DriverScript:
             and optionally pass in additional arguments.
         """
         for stage in stages:
-            self.validate_stage_name(stage)
+            self._validate_stage_name(stage)
         self.args = Namespace()
         self.commands_executed: list[str] = []
         self.console = Console(
@@ -207,7 +207,7 @@ class DriverScript:
         self.start_time = datetime.now()
 
     @staticmethod
-    def validate_stage_name(stage_name: str) -> None:
+    def _validate_stage_name(stage_name: str) -> None:
         """
         Ensure the stage name consists of only lowercase letters.  This
         is both to simplify implementation details within the class, and
@@ -226,33 +226,322 @@ class DriverScript:
                 "letters."
             )
 
-    def print_heading(self, message: str, *, color: str = "cyan") -> None:
-        """
-        Print a heading to indicate at a high level what the script is
-        doing.
+    #
+    # Parse the command line arguments.
+    #
 
-        Args:
-            message:  The message to print.
-            color:  What color to print the message in.
+    @lazy_property
+    def parser(self) -> ArgumentParser:
         """
-        self.console.log(Panel(f"[bold]{message}", style=color))
+        Create an :class:`ArgumentParser` for all the arguments made
+        available by this base class.  This should be overridden in
+        subclasses as follows:
 
-    def print_dry_run_message(self, message: str, *, indent: int = 0) -> None:
-        """
-        Print a message indicating that something is happening due to
-        the script running in dry-run mode.
+        .. code-block:: python
 
-        Args:
-            message:  The message to print.
-            indent:  How many spaces by which to indent that which is
-                printed.
-        """
-        self.console.log(
-            Padding(
-                Panel(f"DRY-RUN MODE:  {message}", style="yellow"),
-                (0, 0, 0, indent)
+            @lazy_property
+            def parser(self) -> ArgumentParser:
+                ap = super().parser
+                ap.description = '''INSERT DESCRIPTION HERE'''
+                ap.add_argument("--foo", ...)
+                ...
+                # Optional changes.
+                ap.formatter_class = RawDescriptionHelpFormatter
+                ap.set_defaults(stage=self.stages)
+                return ap
+
+        The formatter class defaults to a combination of
+        :class:`ArgumentDefaultsHelpFormatter` and
+        :class:`RawDescriptionHelpFormatter`, but can optionally be set
+        to whatever you like.
+
+        If you'd like to set the default value for the ``--stage``
+        argument, you can use :func:`set_defaults` (the example above
+        defaults to all the stages registered when the subclass was
+        instantiated.
+
+        Similarly, if you wish to override the default values for the
+        retry arguments that are automatically provided for every stage,
+        you can do so with, e.g.:
+
+        .. code-block:: python
+
+            ap.set_defaults(
+                foo_retry_attempts=5,
+                foo_retry_delay=10,
+                foo_retry_timeout=600
             )
-        )  # yapf: disable
+
+        If you wish to suppress the stage retry arguments for your
+        stages that don't raise a :class:`RetryStage` exception, you can
+        do so with, e.g.:
+
+        .. code-block:: python
+
+            self.foo_retry_attempts_arg.help = argparse.SUPPRESS
+            self.foo_retry_delay_arg.help = argparse.SUPPRESS
+            self.foo_retry_timeout_arg.help = argparse.SUPPRESS
+
+        And if you want to remove the title for the retry group
+        altogether, you can do so with:
+
+        .. code-block:: python
+
+            self.retry_arg_group.title = argparse.SUPPRESS
+
+        Returns:
+            The base argument parser.
+        """
+        description = (
+            "This is the description of the ArgumentParser in the "
+            "DriverScript base class.  This should be overridden in your "
+            "subclass.  See the docstring for details."
+        )
+        ap = ArgumentParser(
+            description=description,
+            formatter_class=HelpFormatter
+        )
+        ap.add_argument(
+            "--stage",
+            choices=self.stages,
+            nargs="+",
+            help="Which stages to run."
+        )
+        ap.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="If specified, don't actually run the commands in the shell; "
+            "instead print the commands that would have been executed."
+        )
+        if self.stages:
+            self.retry_arg_group = ap.add_argument_group(
+                "retry",
+                "Additional options for retrying stages."
+            )
+            for stage in self.stages:
+                retry_attempts = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-attempts",
+                    default=0,
+                    type=int,
+                    help=f"How many times to retry the {stage!r} stage."
+                )
+                setattr(self, f"{stage}_retry_attempts_arg", retry_attempts)
+                retry_delay = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-delay",
+                    default=0,
+                    type=float,
+                    help="How long to wait (in seconds) before retrying the "
+                    f"{stage!r} stage."
+                )
+                setattr(self, f"{stage}_retry_delay_arg", retry_delay)
+                retry_timeout = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-timeout",
+                    default=60,
+                    type=int,
+                    help="How long to wait (in seconds) before giving up on "
+                    f"retrying the {stage!r} stage."
+                )
+                setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
+        return ap
+
+    def parse_args(self, argv: list[str]) -> None:
+        """
+        Parse the command line arguments supplied by this base class.
+        The recommendation is to save any arguments, perhaps with some
+        transformations, as attributes of your subclass for ease of
+        access throughout your subclass.  This should be overridden in
+        subclasses as follows:
+
+        .. code-block:: python
+
+            def parse_args(self, argv: list[str]) -> None:
+                super().parse_args(argv)
+                # Parse additional arguments and store as attributes.
+                self.foo = self.args.foo
+                ...
+                # Ensure supplied arguments are valid, etc.
+                ...
+
+        Args:
+            argv:  The command line arguments used when running this
+                file as a script.
+        """
+        self.args = self.parser.parse_args(argv)
+        self.dry_run = self.args.dry_run
+        self.stages_to_run = (
+            set(self.args.stage) if self.args.stage is not None else set()
+        )
+        for stage in self.stages:
+            for retry_arg in [
+                f"{stage}_retry_attempts",
+                f"{stage}_retry_delay",
+                f"{stage}_retry_timeout"
+            ]:
+                setattr(self, retry_arg, getattr(self.args, retry_arg, None))
+
+    def raise_parser_error(self, message):
+        """
+        Exit the script with a message indicating what went wrong when
+        parsing the command line arguments.  To be used by subclass
+        developers in the midst of :func:`parse_args`.
+
+        Args:
+            message:  What went wrong.
+
+        Raises:
+            SystemExit:  To indicate the problem and stop script
+                execution.
+        """
+        self.parser.print_help()
+        self.console.print(f"[yellow]\n{message}")
+        raise SystemExit(1)
+
+    #
+    # The `stage` decorator.
+    #
+
+    @staticmethod
+    def stage(stage_name: str, heading: str) -> Callable:
+        """
+        A decorator to take a function and convert it to a conceptual
+        stage of a script.  Each stage consists of the following phases:
+
+        Pre-Stage Actions
+            A series of commands to run before a stage technically
+            begins.  See :func:`_run_pre_stage_actions`.
+        Begin-Stage Actions
+            A series of commands to run at the beginning of the stage.
+            See :func:`_begin_stage`.
+        Stage Body
+            The actual work of the stage itself, encapsulated in the
+            decorated function.  However, if a particular stage is not
+            to be executed (if it's not passed in with the ``--stage``
+            flag on the command line), then there's also the concept of
+            **Skip-Stage Actions**, which are a series of commands to
+            run if a stage is to be skipped.  See :func:`_skip_stage`.
+        End-Stage Actions
+            A series of commands to run at the end of the stage, even if
+            an exception was raised within the **Stage Body**.  See
+            :func:`_end_stage`.
+        Post-Stage Actions
+            A series of commands to run after a stage has technically
+            wrapped up.  See :func:`_run_post_stage_actions`.
+
+        If a subclass developer writes a function to be wrapped by this
+        decorator such that it raises a :class:`RetryStage` exception on
+        certain failure conditions, then there are additional
+        **Prepare-to-Retry Actions**, which are a series of commands to
+        run before the next attempt at running the stage (see
+        :func:`_prepare_to_retry_stage`).  The **Begin-Stage Actions**,
+        **Stage Body**, and **End-Stage Actions** are wrapped in this
+        retry loop, while the **Pre-** and **Post-Stage Actions** are
+        not.
+
+        If the retry specifications (see :func:`parser`) are exhausted
+        and the wrapped function still raises a :class:`RetryStage`
+        exception, then there is a **Retry Error Handler** containing a
+        series of commands to run when exiting the retry loop (see
+        :func:`_handle_stage_retry_error`).
+
+        Args:
+            stage_name:  The name of the stage, which must consist of
+                only lowercase letters.  Note that stage names must be
+                unique within a class that inherits from
+                :class:`DriverScript`.
+            heading:  A heading message to print indicating what will
+                happen in the stage.
+        """
+        __class__._validate_stage_name(stage_name)
+
+        def decorator(func: Callable) -> Callable:
+
+            def get_phase_method(self, method_name: str) -> Callable:
+                """
+                Get the method to run for a phase of a stage.
+
+                Args:
+                    method_name:  The name of the default method for the
+                        phase (e.g., ``"_begin_stage"``).
+
+                Returns:
+                    Either a stage-specific method (e.g.,
+                    ``_begin_stage_STAGE_NAME``), if one exists, or the
+                    default implementation (e.g., :func:`_begin_stage`)
+                    otherwise.
+                """
+                custom_method = getattr(
+                    self,
+                    f"{method_name}_{stage_name}",
+                    False
+                )
+                return custom_method or getattr(self, method_name)
+
+            def run_retryable_phases(self, *args, **kwargs) -> None:
+                """
+                Run the phases of the stage that are "retryable," namely
+                the begin-stage actions, stage body (including skip
+                actions, if applicable), and end-stage actions.  When a
+                stage is automatically retried, these phases will be run
+                again.
+
+                Args:
+                    args: The positional arguments to pass on to the
+                        stage body method (the method decorated).
+                    kwargs: The keyword arguments to pass on to the
+                        stage body method (the method decorated).
+
+                Raises:
+                    Exception:  If an exception is thrown in the stage
+                        body method, it will be caught such that the
+                        end-stage actions can be run, but then it will
+                        be re-raised so it can propagate upward.
+                """
+                get_phase_method(self, "_begin_stage")(heading)
+                if self.current_stage not in self.stages_to_run:
+                    get_phase_method(self, "_skip_stage")()
+                else:
+                    try:
+                        func(self, *args, **kwargs)
+                    except Exception as e:
+                        get_phase_method(self, "_end_stage")()
+                        raise e
+                get_phase_method(self, "_end_stage")()
+
+            @functools.wraps(func)
+            def wrapper(self, *args, **kwargs) -> None:
+                """
+                Wrap the given ``func`` in the various phases of a
+                conceptual stage.
+                """
+                self.current_stage = stage_name
+                get_phase_method(self, "_run_pre_stage_actions")()
+                timeout = getattr(self, f"{stage_name}_retry_timeout")
+                attempts = getattr(self, f"{stage_name}_retry_attempts")
+                delay = getattr(self, f"{stage_name}_retry_delay")
+                stop_after_timeout = stop_after_delay(timeout)
+                stop_after_max_attempts = stop_after_attempt(attempts + 1)
+                retry = Retrying(
+                    retry=retry_if_exception_type(RetryStage),
+                    stop=(stop_after_timeout | stop_after_max_attempts),
+                    wait=wait_fixed(delay),
+                    before_sleep=get_phase_method(
+                        self,
+                        "_prepare_to_retry_stage"
+                    )
+                )
+                try:
+                    retry(run_retryable_phases, self, *args, **kwargs)
+                except RetryError:
+                    get_phase_method(self, "_handle_stage_retry_error")(retry)
+                get_phase_method(self, "_run_post_stage_actions")()
+
+            return wrapper
+
+        return decorator
+
+    #
+    # Methods defining the phases of a `stage`.
+    #
 
     def _run_pre_stage_actions(self) -> None:
         """
@@ -510,187 +799,9 @@ class DriverScript:
                 color="red"
             ))
 
-    @staticmethod
-    def stage(stage_name: str, heading: str) -> Callable:
-        """
-        A decorator to take a function and convert it to a conceptual
-        stage of a script.  Each stage consists of the following phases:
-
-        Pre-Stage Actions
-            A series of commands to run before a stage technically
-            begins.  See :func:`_run_pre_stage_actions`.
-        Begin-Stage Actions
-            A series of commands to run at the beginning of the stage.
-            See :func:`_begin_stage`.
-        Stage Body
-            The actual work of the stage itself, encapsulated in the
-            decorated function.  However, if a particular stage is not
-            to be executed (if it's not passed in with the ``--stage``
-            flag on the command line), then there's also the concept of
-            **Skip-Stage Actions**, which are a series of commands to
-            run if a stage is to be skipped.  See :func:`_skip_stage`.
-        End-Stage Actions
-            A series of commands to run at the end of the stage, even if
-            an exception was raised within the **Stage Body**.  See
-            :func:`_end_stage`.
-        Post-Stage Actions
-            A series of commands to run after a stage has technically
-            wrapped up.  See :func:`_run_post_stage_actions`.
-
-        If a subclass developer writes a function to be wrapped by this
-        decorator such that it raises a :class:`RetryStage` exception on
-        certain failure conditions, then there are additional
-        **Prepare-to-Retry Actions**, which are a series of commands to
-        run before the next attempt at running the stage (see
-        :func:`_prepare_to_retry_stage`).  The **Begin-Stage Actions**,
-        **Stage Body**, and **End-Stage Actions** are wrapped in this
-        retry loop, while the **Pre-** and **Post-Stage Actions** are
-        not.
-
-        If the retry specifications (see :func:`parser`) are exhausted
-        and the wrapped function still raises a :class:`RetryStage`
-        exception, then there is a **Retry Error Handler** containing a
-        series of commands to run when exiting the retry loop (see
-        :func:`_handle_stage_retry_error`).
-
-        Args:
-            stage_name:  The name of the stage, which must consist of
-                only lowercase letters.  Note that stage names must be
-                unique within a class that inherits from
-                :class:`DriverScript`.
-            heading:  A heading message to print indicating what will
-                happen in the stage.
-        """
-        __class__.validate_stage_name(stage_name)
-
-        def decorator(func: Callable) -> Callable:
-
-            def get_phase_method(self, method_name: str) -> Callable:
-                """
-                Get the method to run for a phase of a stage.
-
-                Args:
-                    method_name:  The name of the default method for the
-                        phase (e.g., ``"_begin_stage"``).
-
-                Returns:
-                    Either a stage-specific method (e.g.,
-                    ``_begin_stage_STAGE_NAME``), if one exists, or the
-                    default implementation (e.g., :func:`_begin_stage`)
-                    otherwise.
-                """
-                custom_method = getattr(
-                    self,
-                    f"{method_name}_{stage_name}",
-                    False
-                )
-                return custom_method or getattr(self, method_name)
-
-            def run_retryable_phases(self, *args, **kwargs) -> None:
-                """
-                Run the phases of the stage that are "retryable," namely
-                the begin-stage actions, stage body (including skip
-                actions, if applicable), and end-stage actions.  When a
-                stage is automatically retried, these phases will be run
-                again.
-
-                Args:
-                    args: The positional arguments to pass on to the
-                        stage body method (the method decorated).
-                    kwargs: The keyword arguments to pass on to the
-                        stage body method (the method decorated).
-
-                Raises:
-                    Exception:  If an exception is thrown in the stage
-                        body method, it will be caught such that the
-                        end-stage actions can be run, but then it will
-                        be re-raised so it can propagate upward.
-                """
-                get_phase_method(self, "_begin_stage")(heading)
-                if self.current_stage not in self.stages_to_run:
-                    get_phase_method(self, "_skip_stage")()
-                else:
-                    try:
-                        func(self, *args, **kwargs)
-                    except Exception as e:
-                        get_phase_method(self, "_end_stage")()
-                        raise e
-                get_phase_method(self, "_end_stage")()
-
-            @functools.wraps(func)
-            def wrapper(self, *args, **kwargs) -> None:
-                """
-                Wrap the given ``func`` in the various phases of a
-                conceptual stage.
-                """
-                self.current_stage = stage_name
-                get_phase_method(self, "_run_pre_stage_actions")()
-                timeout = getattr(self, f"{stage_name}_retry_timeout")
-                attempts = getattr(self, f"{stage_name}_retry_attempts")
-                delay = getattr(self, f"{stage_name}_retry_delay")
-                stop_after_timeout = stop_after_delay(timeout)
-                stop_after_max_attempts = stop_after_attempt(attempts + 1)
-                retry = Retrying(
-                    retry=retry_if_exception_type(RetryStage),
-                    stop=(stop_after_timeout | stop_after_max_attempts),
-                    wait=wait_fixed(delay),
-                    before_sleep=get_phase_method(
-                        self,
-                        "_prepare_to_retry_stage"
-                    )
-                )
-                try:
-                    retry(run_retryable_phases, self, *args, **kwargs)
-                except RetryError:
-                    get_phase_method(self, "_handle_stage_retry_error")(retry)
-                get_phase_method(self, "_run_post_stage_actions")()
-
-            return wrapper
-
-        return decorator
-
-    def get_timing_report(self) -> Table:
-        """
-        Create a report of the durations of all the stages.
-
-        Returns:
-            The report, formatted as a table.
-        """
-        table = Table(show_footer=True)
-        table.add_column(header="Stage", footer="Total")
-        table.add_column(
-            header="Duration",
-            footer=str(datetime.now() - self.start_time)
-        )
-        for _ in self.durations:
-            table.add_row(_.stage, str(_.duration))
-        return table
-
-    @staticmethod
-    def _current_arg_is_long_flag(args: list[str]) -> bool:
-        """
-        Determine if the first argument in the list is a long flag.
-
-        Args:
-            args:  The list of arguments to a command.
-
-        Returns:
-            ``True`` if the first argument starts with ``--``.
-        """
-        return len(args) > 0 and args[0].startswith("--")
-
-    @staticmethod
-    def _next_arg_is_flag(args: list[str]) -> bool:
-        """
-        Determine if the second argument in the list is a flag.
-
-        Args:
-            args:  The list of arguments to a command.
-
-        Returns:
-            ``True`` if the second argument starts with ``-``.
-        """
-        return len(args) > 1 and args[1].startswith("-")
+    #
+    # Additional methods to be used or overridden in subclasses.
+    #
 
     def pretty_print_command(self, command: str, indent: int = 4) -> str:
         """
@@ -724,154 +835,86 @@ class DriverScript:
                 )
         return (" \\\n" + " "*indent).join(lines)
 
-    @lazy_property
-    def parser(self) -> ArgumentParser:
+    def print_dry_run_message(self, message: str, *, indent: int = 0) -> None:
         """
-        Create an :class:`ArgumentParser` for all the arguments made
-        available by this base class.  This should be overridden in
-        subclasses as follows:
-
-        .. code-block:: python
-
-            @lazy_property
-            def parser(self) -> ArgumentParser:
-                ap = super().parser
-                ap.description = '''INSERT DESCRIPTION HERE'''
-                ap.add_argument("--foo", ...)
-                ...
-                # Optional changes.
-                ap.formatter_class = RawDescriptionHelpFormatter
-                ap.set_defaults(stage=self.stages)
-                return ap
-
-        The formatter class defaults to a combination of
-        :class:`ArgumentDefaultsHelpFormatter` and
-        :class:`RawDescriptionHelpFormatter`, but can optionally be set
-        to whatever you like.
-
-        If you'd like to set the default value for the ``--stage``
-        argument, you can use :func:`set_defaults` (the example above
-        defaults to all the stages registered when the subclass was
-        instantiated.
-
-        Similarly, if you wish to override the default values for the
-        retry arguments that are automatically provided for every stage,
-        you can do so with, e.g.:
-
-        .. code-block:: python
-
-            ap.set_defaults(
-                foo_retry_attempts=5,
-                foo_retry_delay=10,
-                foo_retry_timeout=600
-            )
-
-        If you wish to suppress the stage retry arguments for your
-        stages that don't raise a :class:`RetryStage` exception, you can
-        do so with, e.g.:
-
-        .. code-block:: python
-
-            self.foo_retry_attempts_arg.help = argparse.SUPPRESS
-            self.foo_retry_delay_arg.help = argparse.SUPPRESS
-            self.foo_retry_timeout_arg.help = argparse.SUPPRESS
-
-        And if you want to remove the title for the retry group
-        altogether, you can do so with:
-
-        .. code-block:: python
-
-            self.retry_arg_group.title = argparse.SUPPRESS
-
-        Returns:
-            The base argument parser.
-        """
-        description = (
-            "This is the description of the ArgumentParser in the "
-            "DriverScript base class.  This should be overridden in your "
-            "subclass.  See the docstring for details."
-        )
-        ap = ArgumentParser(
-            description=description,
-            formatter_class=HelpFormatter
-        )
-        ap.add_argument(
-            "--stage",
-            choices=self.stages,
-            nargs="+",
-            help="Which stages to run."
-        )
-        ap.add_argument(
-            "--dry-run",
-            action="store_true",
-            help="If specified, don't actually run the commands in the shell; "
-            "instead print the commands that would have been executed."
-        )
-        if self.stages:
-            self.retry_arg_group = ap.add_argument_group(
-                "retry",
-                "Additional options for retrying stages."
-            )
-            for stage in self.stages:
-                retry_attempts = self.retry_arg_group.add_argument(
-                    f"--{stage}-retry-attempts",
-                    default=0,
-                    type=int,
-                    help=f"How many times to retry the {stage!r} stage."
-                )
-                setattr(self, f"{stage}_retry_attempts_arg", retry_attempts)
-                retry_delay = self.retry_arg_group.add_argument(
-                    f"--{stage}-retry-delay",
-                    default=0,
-                    type=float,
-                    help="How long to wait (in seconds) before retrying the "
-                    f"{stage!r} stage."
-                )
-                setattr(self, f"{stage}_retry_delay_arg", retry_delay)
-                retry_timeout = self.retry_arg_group.add_argument(
-                    f"--{stage}-retry-timeout",
-                    default=60,
-                    type=int,
-                    help="How long to wait (in seconds) before giving up on "
-                    f"retrying the {stage!r} stage."
-                )
-                setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
-        return ap
-
-    def parse_args(self, argv: list[str]) -> None:
-        """
-        Parse the command line arguments supplied by this base class.
-        The recommendation is to save any arguments, perhaps with some
-        transformations, as attributes of your subclass for ease of
-        access throughout your subclass.  This should be overridden in
-        subclasses as follows:
-
-        .. code-block:: python
-
-            def parse_args(self, argv: list[str]) -> None:
-                super().parse_args(argv)
-                # Parse additional arguments and store as attributes.
-                self.foo = self.args.foo
-                ...
-                # Ensure supplied arguments are valid, etc.
-                ...
+        Print a message indicating that something is happening due to
+        the script running in dry-run mode.
 
         Args:
-            argv:  The command line arguments used when running this
-                file as a script.
+            message:  The message to print.
+            indent:  How many spaces by which to indent that which is
+                printed.
         """
-        self.args = self.parser.parse_args(argv)
-        self.dry_run = self.args.dry_run
-        self.stages_to_run = (
-            set(self.args.stage) if self.args.stage is not None else set()
-        )
-        for stage in self.stages:
-            for retry_arg in [
-                f"{stage}_retry_attempts",
-                f"{stage}_retry_delay",
-                f"{stage}_retry_timeout"
-            ]:
-                setattr(self, retry_arg, getattr(self.args, retry_arg, None))
+        self.console.log(
+            Padding(
+                Panel(f"DRY-RUN MODE:  {message}", style="yellow"),
+                (0, 0, 0, indent)
+            )
+        )  # yapf: disable
+
+    def print_heading(self, message: str, *, color: str = "cyan") -> None:
+        """
+        Print a heading to indicate at a high level what the script is
+        doing.
+
+        Args:
+            message:  The message to print.
+            color:  What color to print the message in.
+        """
+        self.console.log(Panel(f"[bold]{message}", style=color))
+
+    def print_script_execution_summary(
+        self,
+        extra_sections: dict[str, str] | None = None
+    ) -> None:  # yapf: disable
+        """
+        Print a summary of everything that was done by the script.
+
+        Args:
+            extra_sections:  Any sections to add to the summary in
+                addition to what's automatically supplied by this base
+                class.  The keys are section headings, and values are
+                the associated details.  If you provide section headings
+                identical to any supplied by this base class, the
+                corresponding details will override that which is
+                provided by default.
+
+        Note:  If you wish to override this in a subclass for the sake
+        of providing additional sections every time it's called, you can
+        do something like the following:
+
+        .. code-block:: python
+
+            def print_script_execution_summary(
+                self,
+                extra_sections: dict[str, str] | None = None
+            ) -> None:
+                extras = {"Additional section": "With some details."}
+                if extra_sections is not None:
+                    extras |= extra_sections
+                super().print_script_execution_summary(
+                    extra_sections=extras
+                )
+        """
+        unparser = ReverseArgumentParser(self.parser, self.args)
+        sections = {
+            "Ran the following": unparser.get_pretty_command_line_invocation(),
+            "Commands executed": "\n".join(self.commands_executed),
+            "Timing results": self._get_timing_report(),
+            "Script result": (
+                "[bold green]Success" if self.script_success
+                else "[bold red]Failure"
+            )
+        }
+        if extra_sections is not None:
+            sections |= extra_sections
+        items = [""]
+        for section, details in sections.items():
+            items.extend([f"➤ {section}:", Padding(details, (1, 0, 1, 4))])
+        title = f"{self.script_name} Script Execution Summary"
+        self.console.rule(title)
+        self.console.log(Group(*items))
+        self.console.rule(f"End {title}")
 
     def run(
         self,
@@ -917,72 +960,49 @@ class DriverScript:
             self.console.log(f"Executing:  {command}")
         return subprocess.run(command, **kwargs)
 
-    def raise_parser_error(self, message):
+    #
+    # Internal helper methods.
+    #
+
+    def _get_timing_report(self) -> Table:
         """
-        Exit the script with a message indicating what went wrong when
-        parsing the command line arguments.  To be used by subclass
-        developers in the midst of :func:`parse_args`.
+        Create a report of the durations of all the stages.
+
+        Returns:
+            The report, formatted as a table.
+        """
+        table = Table(show_footer=True)
+        table.add_column(header="Stage", footer="Total")
+        table.add_column(
+            header="Duration",
+            footer=str(datetime.now() - self.start_time)
+        )
+        for _ in self.durations:
+            table.add_row(_.stage, str(_.duration))
+        return table
+
+    @staticmethod
+    def _current_arg_is_long_flag(args: list[str]) -> bool:
+        """
+        Determine if the first argument in the list is a long flag.
 
         Args:
-            message:  What went wrong.
+            args:  The list of arguments to a command.
 
-        Raises:
-            SystemExit:  To indicate the problem and stop script
-                execution.
+        Returns:
+            ``True`` if the first argument starts with ``--``.
         """
-        self.parser.print_help()
-        self.console.print(f"[yellow]\n{message}")
-        raise SystemExit(1)
+        return len(args) > 0 and args[0].startswith("--")
 
-    def print_script_execution_summary(
-        self,
-        extra_sections: dict[str, str] | None = None
-    ) -> None:  # yapf: disable
+    @staticmethod
+    def _next_arg_is_flag(args: list[str]) -> bool:
         """
-        Print a summary of everything that was done by the script.
+        Determine if the second argument in the list is a flag.
 
         Args:
-            extra_sections:  Any sections to add to the summary in
-                addition to what's automatically supplied by this base
-                class.  The keys are section headings, and values are
-                the associated details.  If you provide section headings
-                identical to any supplied by this base class, the
-                corresponding details will override that which is
-                provided by default.
+            args:  The list of arguments to a command.
 
-        Note:  If you wish to override this in a subclass for the sake
-        of providing additional sections every time it's called, you can
-        do something like the following:
-
-        .. code-block:: python
-
-            def print_script_execution_summary(
-                self,
-                extra_sections: dict[str, str] | None = None
-            ) -> None:
-                extras = {"Additional section": "With some details."}
-                if extra_sections is not None:
-                    extras |= extra_sections
-                super().print_script_execution_summary(
-                    extra_sections=extras
-                )
+        Returns:
+            ``True`` if the second argument starts with ``-``.
         """
-        unparser = ReverseArgumentParser(self.parser, self.args)
-        sections = {
-            "Ran the following": unparser.get_pretty_command_line_invocation(),
-            "Commands executed": "\n".join(self.commands_executed),
-            "Timing results": self.get_timing_report(),
-            "Script result": (
-                "[bold green]Success" if self.script_success
-                else "[bold red]Failure"
-            )
-        }
-        if extra_sections is not None:
-            sections |= extra_sections
-        items = [""]
-        for section, details in sections.items():
-            items.extend([f"➤ {section}:", Padding(details, (1, 0, 1, 4))])
-        title = f"{self.script_name} Script Execution Summary"
-        self.console.rule(title)
-        self.console.log(Group(*items))
-        self.console.rule(f"End {title}")
+        return len(args) > 1 and args[1].startswith("-")

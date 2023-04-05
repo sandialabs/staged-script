@@ -32,7 +32,7 @@ def test_print_dry_run_message(
 
 
 def test_validate_stage_name() -> None:
-    DriverScript.validate_stage_name("valid")
+    DriverScript._validate_stage_name("valid")
 
 
 @pytest.mark.parametrize(
@@ -41,7 +41,7 @@ def test_validate_stage_name() -> None:
 )  # yapf: disable
 def test_validate_stage_name_raises(stage_name: str) -> None:
     with pytest.raises(ValueError) as e:
-        DriverScript.validate_stage_name(stage_name)
+        DriverScript._validate_stage_name(stage_name)
     msg = e.value.args[0]
     assert f"'{stage_name}' must contain only lowercase letters" in msg
 
@@ -133,7 +133,7 @@ def test_get_timing_report(
             timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
         )
     ]  # yapf: disable
-    ds.console.print(ds.get_timing_report())
+    ds.console.print(ds._get_timing_report())
     captured = capsys.readouterr()
     for stage in [_.stage for _ in ds.durations]:
         assert stage in captured.out
