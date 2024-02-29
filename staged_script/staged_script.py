@@ -64,7 +64,7 @@ def lazy_property(func: Callable) -> property:
 class StageDuration(NamedTuple):
     """
     Define a mapping from stage names to how long they took to run.  See
-    :attr:`DriverScript.durations` for details.
+    :attr:`StagedScript.durations` for details.
     """
     stage: str
     duration: timedelta
@@ -90,7 +90,7 @@ class HelpFormatter(
     pass
 
 
-class DriverScript:
+class StagedScript:
     """
     This serves as a base class for any Python scripts intended to drive
     a series of commands in the underlying shell.  It's built around the
@@ -122,14 +122,14 @@ class DriverScript:
             the :class:`ArgumentParser` holding all the arguments
             associated with retrying stages.
         script_name (str):  The name of the script (the
-            :class:`DriverScript` subclass) being run.
+            :class:`StagedScript` subclass) being run.
         script_stem (str):  Same as :attr:`script_name`, but without the
             extension.
         script_success (bool):  Subclass developers can toggle this
             attribute to indicate whether the script has succeeded.
         stage_start_time (datetime):  The time at which a stage began.
         stages (set[str]):  The stages registered for an instantiation
-            of a :class:`DriverScript` subclass, which are used to
+            of a :class:`StagedScript` subclass, which are used to
             automatically populate pieces of the
             :class:`ArgumentParser`.  This may be a subset of all the
             stages defined in the subclass.
@@ -165,11 +165,11 @@ class DriverScript:
         print_commands: bool = True
     ):
         """
-        Initialize a :class:`DriverScript` object.
+        Initialize a :class:`StagedScript` object.
 
         Args:
             stages:  The set of stages to register for a
-                :class:`DriverScript` subclass, which are used to
+                :class:`StagedScript` subclass, which are used to
                 automatically populate pieces of the
                 :class:`ArgumentParser`.  This may be a subset of all
                 the stages defined in the subclass.
@@ -212,7 +212,7 @@ class DriverScript:
         Ensure the stage name consists of only lowercase letters.  This
         is both to simplify implementation details within the class, and
         to provide the best user experience for users of your
-        :class:`DriverScript` subclasses.
+        :class:`StagedScript` subclasses.
 
         Args:
             stage_name:  The name of the stage.
@@ -294,7 +294,7 @@ class DriverScript:
         """
         description = (
             "This is the description of the ArgumentParser in the "
-            "DriverScript base class.  This should be overridden in your "
+            "StagedScript base class.  This should be overridden in your "
             "subclass.  See the docstring for details."
         )
         ap = ArgumentParser(
@@ -447,7 +447,7 @@ class DriverScript:
             stage_name:  The name of the stage, which must consist of
                 only lowercase letters.  Note that stage names must be
                 unique within a class that inherits from
-                :class:`DriverScript`.
+                :class:`StagedScript`.
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """

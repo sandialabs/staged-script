@@ -2,13 +2,13 @@
 from setuptools import setup
 
 setup(
-    name="driver_script",
-    version="0.1.0",
+    name="staged-script",
+    version="1.0.0",
     description=(
-        "A base class to inherit from when building scripts that are intended "
-        "to driver a series of commands executed in the underlying shell."
+        "A base class to inherit from when building scripts that are "
+        "subdivided into a series of stages."
     ),
-    packages=["driver_script"],
+    packages=["staged_script"],
     scripts=[],
     python_requires=">=3.10",
     tests_require=["pytest==7.1.1"],

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-from python.driver_script.driver_script.driver_script import DriverScript
+from python.staged_script.staged_script.staged_script import StagedScript
 
 
-class MyScript(DriverScript):
+class MyScript(StagedScript):
     ...
 
 

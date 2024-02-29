@@ -2,16 +2,16 @@
 import pytest
 from rich.console import Console
 
-from python.driver_script.driver_script.driver_script import DriverScript
+from python.staged_script.staged_script.staged_script import StagedScript
 
 
-class MyBasicScript(DriverScript):
+class MyBasicScript(StagedScript):
 
-    @DriverScript.stage("good", "Stage that executes correctly")
+    @StagedScript.stage("good", "Stage that executes correctly")
     def run_good_stage(self) -> None:
         print("inside 'run_good_stage' function")
 
-    @DriverScript.stage("bad", "Stage that throws an exception")
+    @StagedScript.stage("bad", "Stage that throws an exception")
     def run_bad_stage(self, error: bool) -> None:
         if error:
             raise RuntimeError("Something went wrong.")

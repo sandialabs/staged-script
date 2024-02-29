@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from .driver_script.driver_script import (
-    DriverScript,
+from .staged_script.staged_script import (
+    StagedScript,
     HelpFormatter,
     RetryStage,
     StageDuration,
@@ -8,7 +8,7 @@ from .driver_script.driver_script import (
 )
 
 __all__ = [
-    "DriverScript",
+    "StagedScript",
     "HelpFormatter",
     "RetryStage",
     "StageDuration",

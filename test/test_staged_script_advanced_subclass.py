@@ -5,12 +5,12 @@ import pytest
 from rich.console import Console
 from tenacity import RetryCallState, Retrying, TryAgain
 
-from python.driver_script.driver_script.driver_script import DriverScript
+from python.staged_script.staged_script.staged_script import StagedScript
 
 
-class MyAdvancedScript(DriverScript):
+class MyAdvancedScript(StagedScript):
 
-    @DriverScript.stage("test", "Test stage")
+    @StagedScript.stage("test", "Test stage")
     def run_test(self, retry: bool = False) -> None:
         print("inside 'run_test' function")
         if retry:

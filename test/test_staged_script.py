@@ -7,21 +7,21 @@ from unittest.mock import MagicMock, patch
 import pytest
 from rich.console import Console
 
-from python.driver_script.driver_script.driver_script import (
-    DriverScript,
+from python.staged_script.staged_script.staged_script import (
+    StagedScript,
     StageDuration
 )
 
 
 @pytest.fixture()
-def ds() -> DriverScript:
-    driver_script = DriverScript(set())
-    driver_script.console = Console(log_time=False, log_path=False)
-    return driver_script
+def ds() -> StagedScript:
+    staged_script = StagedScript(set())
+    staged_script.console = Console(log_time=False, log_path=False)
+    return staged_script
 
 
 def test_print_dry_run_message(
-    ds: DriverScript,
+    ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     message = "dry run message"
@@ -32,7 +32,7 @@ def test_print_dry_run_message(
 
 
 def test_validate_stage_name() -> None:
-    DriverScript._validate_stage_name("valid")
+    StagedScript._validate_stage_name("valid")
 
 
 @pytest.mark.parametrize(
@@ -41,12 +41,12 @@ def test_validate_stage_name() -> None:
 )  # yapf: disable
 def test_validate_stage_name_raises(stage_name: str) -> None:
     with pytest.raises(ValueError) as e:
-        DriverScript._validate_stage_name(stage_name)
+        StagedScript._validate_stage_name(stage_name)
     msg = e.value.args[0]
     assert f"'{stage_name}' must contain only lowercase letters" in msg
 
 
-def test__begin_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
+def test__begin_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
     message = "begin stage"
     ds._begin_stage(message)
     captured = capsys.readouterr()
@@ -54,7 +54,7 @@ def test__begin_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
     assert ds.stage_start_time is not None
 
 
-def test__end_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
+def test__end_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
     stage_name = "test"
     ds.current_stage = stage_name
     ds.stage_start_time = datetime.now()
@@ -65,7 +65,7 @@ def test__end_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
     assert str(ds.durations[-1].duration) in captured.out
 
 
-def test__skip_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
+def test__skip_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
     ds._skip_stage()
     captured = capsys.readouterr()
     assert "Skipping this stage." in captured.out
@@ -76,7 +76,7 @@ def test__skip_stage(ds: DriverScript, capsys: pytest.CaptureFixture) -> None:
 def test__handle_stage_retry_error(
     mock_Retrying: MagicMock,
     retry_attempts: int,
-    ds: DriverScript,
+    ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     ds.current_stage = "test"
@@ -104,7 +104,7 @@ def test__handle_stage_retry_error(
 @patch("tenacity.RetryCallState")
 def test__prepare_to_retry_stage(
     mock_RetryCallState: MagicMock,
-    ds: DriverScript,
+    ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     ds.current_stage = "test"
@@ -120,7 +120,7 @@ def test__prepare_to_retry_stage(
 
 
 def test_get_timing_report(
-    ds: DriverScript,
+    ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     ds.durations = [
@@ -164,12 +164,12 @@ def test_get_timing_report(
 def test_pretty_print_command(
     command: str,
     expected: str,
-    ds: DriverScript
+    ds: StagedScript
 ) -> None:
     assert ds.pretty_print_command(command) == expected
 
 
-def test_parse_args(ds: DriverScript) -> None:
+def test_parse_args(ds: StagedScript) -> None:
     ds.stages = {"first", "second", "third"}
     ds.parse_args(shlex.split("--dry-run --stage first third"))
     assert ds.dry_run is True
@@ -181,7 +181,7 @@ def test_parse_args(ds: DriverScript) -> None:
 def test_run(
     mock_run: MagicMock,
     print_commands: bool,
-    ds: DriverScript,
+    ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     command = "echo 'hello world'"
@@ -199,7 +199,7 @@ def test_run(
 @patch("subprocess.run")
 def test_run_override_print_commands(
     mock_run: MagicMock,
-    ds: DriverScript,
+    ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     command = "echo 'hello world'"
@@ -232,7 +232,7 @@ def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,
     extras: dict[str, str] | None,
     script_success: bool,
-    ds: DriverScript,
+    ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     mock_get_pretty_command_line_invocation.return_value = (
@@ -276,7 +276,7 @@ def test_print_script_execution_summary(
 
 
 def test_raise_parser_error(
-    ds: DriverScript,
+    ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
     error_message = (
