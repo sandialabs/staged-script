@@ -14,7 +14,7 @@
 [![Documentation Status](https://readthedocs.org/projects/staged-script/badge/?version=latest)](https://staged-script.readthedocs.io/en/latest/?badge=latest)
 [![License](https://anaconda.org/conda-forge/staged-script/badges/license.svg)](LICENSE.md)
 [![Merged PRs](https://img.shields.io/github/issues-pr-closed-raw/sandialabs/staged-script.svg?label=merged+PRs)](https://github.com/sandialabs/staged-script/pulls?q=is:pr+is:merged)
-[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/my-best-practices-project-number/badge)](https://bestpractices.coreinfrastructure.org/projects/my-best-practices-project-number)
+[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/8864/badge)](https://bestpractices.coreinfrastructure.org/projects/8864)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/sandialabs/staged-script/badge)](https://securityscorecards.dev/viewer/?uri=github.com/sandialabs/staged-script)
 ![Platforms](https://anaconda.org/conda-forge/staged-script/badges/platforms.svg)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
