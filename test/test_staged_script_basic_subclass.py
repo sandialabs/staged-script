@@ -19,7 +19,7 @@ class MyBasicScript(StagedScript):
         print("inside 'run_good_stage' function")
 
     @StagedScript.stage("bad", "Stage that throws an exception")
-    def run_bad_stage(self, error: bool) -> None:
+    def run_bad_stage(self, *, error: bool) -> None:
         """
         A simple stage that might run into an error.
 
@@ -66,7 +66,7 @@ def test_good_stage(
 
 @pytest.mark.parametrize("error", [True, False])
 def test_bad_stage(
-    error: bool,
+    error: bool,  # noqa: FBT001
     mbs: MyBasicScript,
     capsys: pytest.CaptureFixture
 ) -> None:
@@ -80,11 +80,11 @@ def test_bad_stage(
     mbs.stages_to_run = {"bad"}
     if error:
         with pytest.raises(RuntimeError) as e:
-            mbs.run_bad_stage(error)
+            mbs.run_bad_stage(error=error)
         msg = e.value.args[0]
         assert "Something went wrong." in msg
     else:
-        mbs.run_bad_stage(error)
+        mbs.run_bad_stage(error=error)
     captured = capsys.readouterr()
 
     # Ensure `_begin_stage()` is called.

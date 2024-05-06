@@ -17,7 +17,7 @@ class MyAdvancedScript(StagedScript):
     """
 
     @StagedScript.stage("test", "Test stage")
-    def run_test(self, retry: bool = False) -> None:
+    def run_test(self, *, retry: bool = False) -> None:
         """
         A stage that might need to be retried.
 
@@ -67,6 +67,7 @@ def mas() -> MyAdvancedScript:
 def ensure_phase_comes_next(
     method_name: str,
     output: str,
+    *,
     custom: bool = False,
     start: int = 0
 ) -> int:
@@ -101,11 +102,11 @@ def ensure_phase_comes_next(
 @pytest.mark.parametrize("stages_to_run", [{"test"}, set()])
 def test_stage(
     stages_to_run: set[str],
-    custom_pre_stage: bool,
-    custom_begin_stage: bool,
-    custom_skip_stage: bool,
-    custom_end_stage: bool,
-    custom_post_stage: bool,
+    custom_pre_stage: bool,  # noqa: FBT001
+    custom_begin_stage: bool,  # noqa: FBT001
+    custom_skip_stage: bool,  # noqa: FBT001
+    custom_end_stage: bool,  # noqa: FBT001
+    custom_post_stage: bool,  # noqa: FBT001
     mas: MyAdvancedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
@@ -160,8 +161,8 @@ def test_stage(
 @pytest.mark.parametrize("custom_handle_retry_error", [True, False])
 @pytest.mark.parametrize("custom_prepare_to_retry", [True, False])
 def test_stage_retry(
-    custom_prepare_to_retry: bool,
-    custom_handle_retry_error: bool,
+    custom_prepare_to_retry: bool,  # noqa: FBT001
+    custom_handle_retry_error: bool,  # noqa: FBT001
     retry_attempts: int,
     mas: MyAdvancedScript,
     capsys: pytest.CaptureFixture

@@ -192,7 +192,7 @@ def test_parse_args(ds: StagedScript) -> None:
 @patch("subprocess.run")
 def test_run(
     mock_run: MagicMock,
-    print_commands: bool,
+    print_commands: bool,  # noqa: FBT001
     ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
@@ -245,7 +245,7 @@ def test_run_override_print_commands(
 def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,
     extras: dict[str, str] | None,
-    script_success: bool,
+    script_success: bool,  # noqa: FBT001
     ds: StagedScript,
     capsys: pytest.CaptureFixture
 ) -> None:

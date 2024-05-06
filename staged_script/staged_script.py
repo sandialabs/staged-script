@@ -168,6 +168,7 @@ class StagedScript:
     def __init__(
         self,
         stages: set[str],
+        *,
         console_force_terminal: bool | None = None,
         console_log_path: bool = True,
         print_commands: bool = True
@@ -959,6 +960,7 @@ class StagedScript:
     def run(
         self,
         command: str,
+        *,
         pretty_print: bool = False,
         print_command: bool | None = None,
         **kwargs
