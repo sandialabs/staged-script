@@ -154,7 +154,7 @@ def test_get_timing_report(
 
 
 @pytest.mark.parametrize(
-    "command, expected",
+    ("command", "expected"),
     [("command --foo",
       "command \\\n    --foo"),
      ("command --foo bar baz",
