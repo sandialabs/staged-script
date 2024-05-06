@@ -8,7 +8,6 @@ import functools
 import re
 import shlex
 import subprocess
-import sys
 from argparse import (
     ArgumentDefaultsHelpFormatter,
     ArgumentParser,
@@ -26,16 +25,11 @@ from rich.console import Console, Group
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.table import Table
+from reverse_argparse import ReverseArgumentParser, quote_arg_if_necessary
 from tenacity import RetryCallState, RetryError, Retrying, TryAgain
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
-
-sys.path.append(str(Path(__file__).resolve().parents[3] / "python"))
-from reverse_argparse import (  # noqa: E402
-    ReverseArgumentParser,
-    quote_arg_if_necessary
-)
 
 rich.traceback.install()
 
