@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import shlex
 from datetime import datetime, timedelta
 from subprocess import CompletedProcess

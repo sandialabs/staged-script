@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from python.staged_script.staged_script.staged_script import StagedScript
 
 
