@@ -1,3 +1,8 @@
+"""
+Setup file for the ``staged-script`` package.
+
+To install, simply ``python3 -m pip install .`` in the repository root.
+"""
 from setuptools import setup
 
 setup(

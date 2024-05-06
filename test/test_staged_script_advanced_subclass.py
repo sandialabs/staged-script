@@ -1,3 +1,4 @@
+"""Integration tests for an advanced ``staged-script`` use case."""
 import shlex
 
 import pytest
@@ -8,9 +9,24 @@ from python.staged_script.staged_script.staged_script import StagedScript
 
 
 class MyAdvancedScript(StagedScript):
+    """
+    An advanced staged script.
+
+    A stage method is defined, and the various phase methods are
+    overridden.
+    """
 
     @StagedScript.stage("test", "Test stage")
     def run_test(self, retry: bool = False) -> None:
+        """
+        A stage that might need to be retried.
+
+        Args:
+            retry:  Whether the stage should be retried.
+
+        Raises:
+            TryAgain:  If the stage needs to be retried.
+        """
         print("inside 'run_test' function")
         if retry:
             raise TryAgain("Stage failed; retrying...")
@@ -42,6 +58,7 @@ class MyAdvancedScript(StagedScript):
 
 @pytest.fixture()
 def mas() -> MyAdvancedScript:
+    """Create a :class:`MyAdvancedScript` object to be used by tests."""
     my_advanced_script = MyAdvancedScript({"test"})
     my_advanced_script.console = Console(log_time=False, log_path=False)
     return my_advanced_script
@@ -53,6 +70,22 @@ def ensure_phase_comes_next(
     custom: bool = False,
     start: int = 0
 ) -> int:
+    """
+    A helper to check the sequencing of the output.
+
+    Find where the output text corresponding to a particular phase
+    occurs in the ``stdout`` of the test.
+
+    Args:
+        method_name:  The name of the method for the phase.
+        output:  The output text to search.
+        custom:  Whether to use the custom phase method vs the default
+            implementation.
+        start:  Where to start searching in the output string.
+
+    Returns:
+        The index of the phase output text in the output string.
+    """
     search_text = (
         f"inside '{method_name}_test' function" if custom
         else f"inside '{method_name}' function"
@@ -76,6 +109,11 @@ def test_stage(
     mas: MyAdvancedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
+    """
+    Ensure the various phases of the stage run in the appropriate order.
+
+    This case does not include retrying the stage.
+    """
     mas.parse_args([])
     mas.stages_to_run = stages_to_run
     if custom_pre_stage:
@@ -128,6 +166,11 @@ def test_stage_retry(
     mas: MyAdvancedScript,
     capsys: pytest.CaptureFixture
 ) -> None:
+    """
+    Ensure the various phases of the stage run in the appropriate order.
+
+    This case includes retrying the stage.
+    """
     mas.parse_args(shlex.split(f"--test-retry-attempts {retry_attempts}"))
     mas.stages_to_run = {"test"}
     if custom_prepare_to_retry:

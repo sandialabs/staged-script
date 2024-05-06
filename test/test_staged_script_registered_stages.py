@@ -1,11 +1,13 @@
+"""Integration tests for retry options."""
 from python.staged_script.staged_script.staged_script import StagedScript
 
 
 class MyScript(StagedScript):
-    ...
+    """A basic staged script to test the retry options in the help text."""
 
 
 def test_parser_registered_stages() -> None:
+    """Ensure retry options are in the help text for all registered stages."""
     stages = {"one", "two", "three"}
     script = MyScript(stages)
     help_text = script.parser.format_help()
@@ -21,6 +23,7 @@ def test_parser_registered_stages() -> None:
 
 
 def test_parser_no_registered_stages() -> None:
+    """Ensure retry options are absent when no stages are registered."""
     script = MyScript(set())
     help_text = script.parser.format_help()
     for text in [
