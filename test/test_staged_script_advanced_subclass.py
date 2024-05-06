@@ -101,7 +101,7 @@ def ensure_phase_comes_next(
 @pytest.mark.parametrize("custom_begin_stage", [True, False])
 @pytest.mark.parametrize("custom_pre_stage", [True, False])
 @pytest.mark.parametrize("stages_to_run", [{"test"}, set()])
-def test_stage(
+def test_stage(  # noqa: PLR0913
     stages_to_run: set[str],
     custom_pre_stage: bool,  # noqa: FBT001
     custom_begin_stage: bool,  # noqa: FBT001
