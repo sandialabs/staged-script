@@ -531,9 +531,9 @@ class StagedScript:
                 else:
                     try:
                         func(self, *args, **kwargs)
-                    except Exception as e:
+                    except Exception:
                         get_phase_method(self, "_end_stage")()
-                        raise e
+                        raise
                 get_phase_method(self, "_end_stage")()
 
             @functools.wraps(func)
