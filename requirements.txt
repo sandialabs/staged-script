@@ -1,0 +1,5 @@
+# Main requirements for `staged-script`.
+
+reverse-argparse
+rich
+tenacity
