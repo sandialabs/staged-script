@@ -44,10 +44,11 @@ def test_validate_stage_name() -> None:
 )  # yapf: disable
 def test_validate_stage_name_raises(stage_name: str) -> None:
     """Ensure :func:`validate_stage_name` raises an exception when needed."""
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(
+        ValueError,
+        match=f"'{stage_name}' must contain only lowercase letters",
+    ):
         StagedScript._validate_stage_name(stage_name)
-    msg = e.value.args[0]
-    assert f"'{stage_name}' must contain only lowercase letters" in msg
 
 
 def test__begin_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:

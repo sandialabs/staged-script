@@ -213,7 +213,7 @@ def test_stage_retry(
             start=index
         )
     if retry_attempts == 0:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="substring not found"):
             ensure_phase_comes_next(
                 "_prepare_to_retry_stage",
                 captured.out,
