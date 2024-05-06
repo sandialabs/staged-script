@@ -1,4 +1,4 @@
-from .staged_script.staged_script import (
+from .staged_script import (
     StagedScript,
     HelpFormatter,
     RetryStage,
