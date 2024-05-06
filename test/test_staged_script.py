@@ -303,6 +303,6 @@ def test_raise_parser_error(
     with pytest.raises(SystemExit):
         ds.raise_parser_error(error_message)
     captured = capsys.readouterr()
-    expected = error_message.split() + ["usage:", "--dry-run", "--stage"]
+    expected = [*error_message.split(), "usage:", "--dry-run", "--stage"]
     for term in expected:
         assert term in captured.out
