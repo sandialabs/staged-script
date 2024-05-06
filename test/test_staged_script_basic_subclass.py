@@ -27,7 +27,8 @@ class MyBasicScript(StagedScript):
             error:  Whether an error should occur.
         """
         if error:
-            raise RuntimeError("Something went wrong.")
+            message = "Something went wrong."
+            raise RuntimeError(message)
         print("Got past error.")
 
 

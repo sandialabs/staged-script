@@ -232,10 +232,11 @@ class StagedScript:
             ValueError:  If the stage name is invalid.
         """
         if not re.match("^[a-z]+$", stage_name):
-            raise ValueError(
+            message = (
                 f"Stage name {stage_name!r} must contain only lowercase "
                 "letters."
             )
+            raise ValueError(message)
 
     #
     # Parse the command line arguments.

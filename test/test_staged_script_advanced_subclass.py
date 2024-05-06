@@ -29,7 +29,8 @@ class MyAdvancedScript(StagedScript):
         """
         print("inside 'run_test' function")
         if retry:
-            raise TryAgain("Stage failed; retrying...")
+            message = "Stage failed; retrying..."
+            raise TryAgain(message)
 
     def _run_pre_stage_actions(self) -> None:
         print("inside '_run_pre_stage_actions' function")
