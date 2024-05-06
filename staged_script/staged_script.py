@@ -700,7 +700,7 @@ class StagedScript:
             StageDuration(self.current_stage, stage_duration)
         )  # yapf: disable
         self.console.log(
-            f"`{self.current_stage}` stage duration:  {str(stage_duration)}"
+            f"`{self.current_stage}` stage duration:  {stage_duration!s}"
         )
 
     def _run_post_stage_actions(self) -> None:
