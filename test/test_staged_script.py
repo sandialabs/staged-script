@@ -163,8 +163,6 @@ def test_get_timing_report(
       "command \\\n    foo \\\n    bar \\\n    baz"),
      ("command --foo --bar baz",
       "command \\\n    --foo \\\n    --bar baz"),
-     ("command foo bar baz",
-      "command \\\n    foo \\\n    bar \\\n    baz"),
      ("command --foo 'bar baz'",
       "command \\\n    --foo 'bar baz'"),
      ("command -f bar",
