@@ -20,3 +20,4 @@ __all__ = [
     "StageDuration",
     "lazy_property",
 ]
+__version__ = "1.0.0"
