@@ -39,9 +39,8 @@ def test__validate_stage_name() -> None:
 
 
 @pytest.mark.parametrize(
-    "stage_name",
-    ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
-)  # yapf: disable
+    "stage_name", ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
+)
 def test__validate_stage_name_raises(stage_name: str) -> None:
     """Ensure :func:`validate_stage_name` raises an exception when needed."""
     with pytest.raises(
@@ -141,14 +140,12 @@ def test__get_timing_report(
     """Test the :func:`_get_timing_report` method."""
     script.durations = [
         StageDuration(
-            "first",
-            timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
+            "first", timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
         ),
         StageDuration(
-            "second",
-            timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
-        )
-    ]  # yapf: disable
+            "second", timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
+        ),
+    ]
     script.console.print(script._get_timing_report())
     captured = capsys.readouterr()
     for stage in [_.stage for _ in script.durations]:
@@ -250,14 +247,12 @@ def test_print_script_execution_summary(
     )
     script.durations = [
         StageDuration(
-            "first",
-            timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
+            "first", timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
         ),
         StageDuration(
-            "second",
-            timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
-        )
-    ]  # yapf: disable
+            "second", timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
+        ),
+    ]
     script.commands_executed = ["foo", "bar", "baz"]
     script.script_success = script_success
     if extras is None:
@@ -277,7 +272,7 @@ def test_print_script_execution_summary(
         + [_.stage for _ in script.durations]
         + [str(_.duration) for _ in script.durations]
         + ["Success" if script_success else "Failure"]
-    )  # yapf: disable
+    )
     if extras is not None:
         headings += list(extras.keys())
         details += list(extras.values())

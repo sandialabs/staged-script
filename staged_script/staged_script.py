@@ -699,7 +699,7 @@ class StagedScript:
         stage_duration = datetime.now(tz=timezone.utc) - self.stage_start_time
         self.durations.append(
             StageDuration(self.current_stage, stage_duration)
-        )  # yapf: disable
+        )
         self.console.log(
             f"`{self.current_stage}` stage duration:  {stage_duration!s}"
         )
@@ -862,9 +862,11 @@ class StagedScript:
         args = shlex.split(command)
         lines = [args.pop(0)]
         while args:
-            if (not self._current_arg_is_long_flag(args)
-                    or self._next_arg_is_flag(args)
-                    or len(args) == 1):  # yapf: disable
+            if (
+                not self._current_arg_is_long_flag(args)
+                or self._next_arg_is_flag(args)
+                or len(args) == 1
+            ):
                 lines.append(args.pop(0))
             else:
                 lines.append(
@@ -887,9 +889,9 @@ class StagedScript:
         self.console.log(
             Padding(
                 Panel(f"DRY-RUN MODE:  {message}", style="yellow"),
-                (0, 0, 0, indent)
+                (0, 0, 0, indent),
             )
-        )  # yapf: disable
+        )
 
     def print_heading(self, message: str, *, color: str = "cyan") -> None:
         """
@@ -904,9 +906,8 @@ class StagedScript:
         self.console.log(Panel(f"[bold]{message}", style=color))
 
     def print_script_execution_summary(
-        self,
-        extra_sections: dict[str, str] | None = None
-    ) -> None:  # yapf: disable
+        self, extra_sections: dict[str, str] | None = None
+    ) -> None:
         """
         Print a summary of everything that was done by the script.
 
