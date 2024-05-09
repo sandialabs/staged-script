@@ -8,10 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from rich.console import Console
 
-from python.staged_script.staged_script.staged_script import (
-    StagedScript,
-    StageDuration,
-)
+from staged_script import StagedScript, StageDuration
 
 
 @pytest.fixture()

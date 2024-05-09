@@ -6,7 +6,7 @@ import pytest
 from rich.console import Console
 from tenacity import RetryCallState, Retrying, TryAgain
 
-from python.staged_script.staged_script.staged_script import StagedScript
+from staged_script import StagedScript
 
 
 class MyAdvancedScript(StagedScript):

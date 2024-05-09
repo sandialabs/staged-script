@@ -3,7 +3,7 @@
 import pytest
 from rich.console import Console
 
-from python.staged_script.staged_script.staged_script import StagedScript
+from staged_script import StagedScript
 
 
 class MyBasicScript(StagedScript):

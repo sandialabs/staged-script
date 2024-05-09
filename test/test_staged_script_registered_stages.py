@@ -1,6 +1,6 @@
 """Integration tests for retry options."""
 
-from python.staged_script.staged_script.staged_script import StagedScript
+from staged_script import StagedScript
 
 
 class MyScript(StagedScript):
