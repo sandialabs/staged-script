@@ -1,4 +1,5 @@
 """Integration tests for a basic ``StagedScript`` use case."""
+
 import pytest
 from rich.console import Console
 
@@ -42,9 +43,7 @@ def mbs() -> MyBasicScript:
 
 @pytest.mark.parametrize("stages_to_run", [{"good"}, set()])
 def test_good_stage(
-    stages_to_run: set[str],
-    mbs: MyBasicScript,
-    capsys: pytest.CaptureFixture
+    stages_to_run: set[str], mbs: MyBasicScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Ensure the good stage runs to completion."""
     mbs.parse_args([])
@@ -69,7 +68,7 @@ def test_good_stage(
 def test_bad_stage(
     error: bool,  # noqa: FBT001
     mbs: MyBasicScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
     """
     Ensure the bad stage runs as expected.

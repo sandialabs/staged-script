@@ -3,6 +3,7 @@ Setup file for the ``staged-script`` package.
 
 To install, simply ``python3 -m pip install .`` in the repository root.
 """
+
 from setuptools import setup
 
 setup(
@@ -16,5 +17,5 @@ setup(
     scripts=[],
     python_requires=">=3.10",
     tests_require=["pytest==7.1.1"],
-    install_requires=["rich==12.5.1"]
+    install_requires=["rich==12.5.1"],
 )

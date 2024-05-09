@@ -1,4 +1,5 @@
 """Integration tests for an advanced ``staged-script`` use case."""
+
 import shlex
 
 import pytest
@@ -47,10 +48,7 @@ class MyAdvancedScript(StagedScript):
     def _run_post_stage_actions(self) -> None:
         print("inside '_run_post_stage_actions' function")
 
-    def _handle_stage_retry_error(
-        self,
-        retry: Retrying
-    ) -> None:
+    def _handle_stage_retry_error(self, retry: Retrying) -> None:
         print("inside '_handle_stage_retry_error' function")
 
     def _prepare_to_retry_stage(self, retry_state: RetryCallState) -> None:
@@ -66,11 +64,7 @@ def mas() -> MyAdvancedScript:
 
 
 def ensure_phase_comes_next(
-    method_name: str,
-    output: str,
-    *,
-    custom: bool = False,
-    start: int = 0
+    method_name: str, output: str, *, custom: bool = False, start: int = 0
 ) -> int:
     """
     A helper to check the sequencing of the output.
@@ -89,7 +83,8 @@ def ensure_phase_comes_next(
         The index of the phase output text in the output string.
     """
     search_text = (
-        f"inside '{method_name}_test' function" if custom
+        f"inside '{method_name}_test' function"
+        if custom
         else f"inside '{method_name}' function"
     )
     return output.index(search_text, start)
@@ -109,7 +104,7 @@ def test_stage(  # noqa: PLR0913
     custom_end_stage: bool,  # noqa: FBT001
     custom_post_stage: bool,  # noqa: FBT001
     mas: MyAdvancedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
     """
     Ensure the various phases of the stage run in the appropriate order.
@@ -119,24 +114,24 @@ def test_stage(  # noqa: PLR0913
     mas.parse_args([])
     mas.stages_to_run = stages_to_run
     if custom_pre_stage:
-        mas._run_pre_stage_actions_test = (
-            lambda: print("inside '_run_pre_stage_actions_test' function")
+        mas._run_pre_stage_actions_test = lambda: print(
+            "inside '_run_pre_stage_actions_test' function"
         )
     if custom_begin_stage:
-        mas._begin_stage_test = (
-            lambda heading: print("inside '_begin_stage_test' function")
+        mas._begin_stage_test = lambda heading: print(
+            "inside '_begin_stage_test' function"
         )
     if custom_skip_stage:
-        mas._skip_stage_test = (
-            lambda: print("inside '_skip_stage_test' function")
+        mas._skip_stage_test = lambda: print(
+            "inside '_skip_stage_test' function"
         )
     if custom_end_stage:
-        mas._end_stage_test = (
-            lambda: print("inside '_end_stage_test' function")
+        mas._end_stage_test = lambda: print(
+            "inside '_end_stage_test' function"
         )
     if custom_post_stage:
-        mas._run_post_stage_actions_test = (
-            lambda: print("inside '_run_post_stage_actions_test' function")
+        mas._run_post_stage_actions_test = lambda: print(
+            "inside '_run_post_stage_actions_test' function"
         )
     mas.run_test()
     captured = capsys.readouterr()
@@ -144,17 +139,17 @@ def test_stage(  # noqa: PLR0913
     phases = [
         ("_run_pre_stage_actions", custom_pre_stage),
         ("_begin_stage", custom_begin_stage),
-        (("run_test", False) if "test" in stages_to_run
-         else ("_skip_stage", custom_skip_stage)),
+        (
+            ("run_test", False)
+            if "test" in stages_to_run
+            else ("_skip_stage", custom_skip_stage)
+        ),
         ("_end_stage", custom_end_stage),
-        ("_run_post_stage_actions", custom_post_stage)
+        ("_run_post_stage_actions", custom_post_stage),
     ]
     for method, custom in phases:
         index = ensure_phase_comes_next(
-            method,
-            captured.out,
-            custom=custom,
-            start=index
+            method, captured.out, custom=custom, start=index
         )
 
 
@@ -166,7 +161,7 @@ def test_stage_retry(
     custom_handle_retry_error: bool,  # noqa: FBT001
     retry_attempts: int,
     mas: MyAdvancedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
     """
     Ensure the various phases of the stage run in the appropriate order.
@@ -176,14 +171,12 @@ def test_stage_retry(
     mas.parse_args(shlex.split(f"--test-retry-attempts {retry_attempts}"))
     mas.stages_to_run = {"test"}
     if custom_prepare_to_retry:
-        mas._prepare_to_retry_stage_test = (
-            lambda retry_state:
-                print("inside '_prepare_to_retry_stage_test' function")
+        mas._prepare_to_retry_stage_test = lambda retry_state: print(
+            "inside '_prepare_to_retry_stage_test' function"
         )
     if custom_handle_retry_error:
-        mas._handle_stage_retry_error_test = (
-            lambda retry:
-                print("inside '_handle_stage_retry_error_test' function")
+        mas._handle_stage_retry_error_test = lambda retry: print(
+            "inside '_handle_stage_retry_error_test' function"
         )
     mas.run_test(retry=True)
     captured = capsys.readouterr()
@@ -192,25 +185,22 @@ def test_stage_retry(
         ("_run_pre_stage_actions", False),
         ("_begin_stage", False),
         ("run_test", False),
-        ("_end_stage", False)
+        ("_end_stage", False),
     ]
     for _ in range(retry_attempts):
         phases += [
             ("_prepare_to_retry_stage", custom_prepare_to_retry),
             ("_begin_stage", False),
             ("run_test", False),
-            ("_end_stage", False)
+            ("_end_stage", False),
         ]
     phases += [
         ("_handle_stage_retry_error", custom_handle_retry_error),
-        ("_run_post_stage_actions", False)
+        ("_run_post_stage_actions", False),
     ]
     for method, custom in phases:
         index = ensure_phase_comes_next(
-            method,
-            captured.out,
-            custom=custom,
-            start=index
+            method, captured.out, custom=custom, start=index
         )
     if retry_attempts == 0:
         with pytest.raises(ValueError, match="substring not found"):
@@ -218,5 +208,5 @@ def test_stage_retry(
                 "_prepare_to_retry_stage",
                 captured.out,
                 custom=custom_prepare_to_retry,
-                start=0
+                start=0,
             )

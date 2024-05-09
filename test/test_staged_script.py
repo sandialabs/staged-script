@@ -1,4 +1,5 @@
 """Unit tests for ``staged-script``."""
+
 import shlex
 from datetime import datetime, timedelta, timezone
 from subprocess import CompletedProcess
@@ -9,7 +10,7 @@ from rich.console import Console
 
 from python.staged_script.staged_script.staged_script import (
     StagedScript,
-    StageDuration
+    StageDuration,
 )
 
 
@@ -22,8 +23,7 @@ def ds() -> StagedScript:
 
 
 def test_print_dry_run_message(
-    ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    ds: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Test the :func:`print_dry_run_message` method."""
     message = "dry run message"
@@ -85,7 +85,7 @@ def test__handle_stage_retry_error(
     mock_Retrying: MagicMock,
     retry_attempts: int,
     ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`_handle_stage_retry_error` method."""
     ds.current_stage = "test"
@@ -93,7 +93,7 @@ def test__handle_stage_retry_error(
     retry = mock_Retrying()
     retry.statistics = {
         "delay_since_first_attempt": 1234,
-        "attempt_number": retry_attempts
+        "attempt_number": retry_attempts,
     }
     ds._handle_stage_retry_error(retry)
     captured = capsys.readouterr()
@@ -105,7 +105,7 @@ def test__handle_stage_retry_error(
             "Total attempts:",
             "5.",
             "Total time:",
-            "0:20:34."
+            "0:20:34.",
         ]:
             assert text in captured.out
 
@@ -114,7 +114,7 @@ def test__handle_stage_retry_error(
 def test__prepare_to_retry_stage(
     mock_RetryCallState: MagicMock,
     ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`_prepare_to_retry_stage` method."""
     ds.current_stage = "test"
@@ -124,14 +124,13 @@ def test__prepare_to_retry_stage(
     captured = capsys.readouterr()
     for text in [
         "Preparing to retry the 'test' stage...",
-        "mock_RetryCallState.__repr__"
+        "mock_RetryCallState.__repr__",
     ]:
         assert text in captured.out
 
 
 def test_get_timing_report(
-    ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    ds: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Test the :func:`_get_timing_report` method."""
     ds.durations = [
@@ -155,25 +154,18 @@ def test_get_timing_report(
 
 @pytest.mark.parametrize(
     ("command", "expected"),
-    [("command --foo",
-      "command \\\n    --foo"),
-     ("command --foo bar baz",
-      "command \\\n    --foo bar \\\n    baz"),
-     ("command foo bar baz",
-      "command \\\n    foo \\\n    bar \\\n    baz"),
-     ("command --foo --bar baz",
-      "command \\\n    --foo \\\n    --bar baz"),
-     ("command --foo 'bar baz'",
-      "command \\\n    --foo 'bar baz'"),
-     ("command -f bar",
-      "command \\\n    -f \\\n    bar"),
-     ("command --foo -b",
-      "command \\\n    --foo \\\n    -b")]
+    [
+        ("command --foo", "command \\\n    --foo"),
+        ("command --foo bar baz", "command \\\n    --foo bar \\\n    baz"),
+        ("command foo bar baz", "command \\\n    foo \\\n    bar \\\n    baz"),
+        ("command --foo --bar baz", "command \\\n    --foo \\\n    --bar baz"),
+        ("command --foo 'bar baz'", "command \\\n    --foo 'bar baz'"),
+        ("command -f bar", "command \\\n    -f \\\n    bar"),
+        ("command --foo -b", "command \\\n    --foo \\\n    -b"),
+    ],
 )
 def test_pretty_print_command(
-    command: str,
-    expected: str,
-    ds: StagedScript
+    command: str, expected: str, ds: StagedScript
 ) -> None:
     """Test the :func:`pretty_print_command` method."""
     assert ds.pretty_print_command(command) == expected
@@ -193,7 +185,7 @@ def test_run(
     mock_run: MagicMock,
     print_commands: bool,  # noqa: FBT001
     ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`run` method."""
     command = "echo 'hello world'"
@@ -210,9 +202,7 @@ def test_run(
 
 @patch("subprocess.run")
 def test_run_override_print_commands(
-    mock_run: MagicMock,
-    ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    mock_run: MagicMock, ds: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Ensure :func:`run` prints the command executed when appropriate."""
     command = "echo 'hello world'"
@@ -232,10 +222,10 @@ def test_run_override_print_commands(
     [
         {
             "More information": "Additional details.",
-            "Another section": "With still more information."
+            "Another section": "With still more information.",
         },
-        None
-    ]
+        None,
+    ],
 )
 @patch(
     "reverse_argparse.ReverseArgumentParser."
@@ -246,7 +236,7 @@ def test_print_script_execution_summary(
     extras: dict[str, str] | None,
     script_success: bool,  # noqa: FBT001
     ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`print_script_execution_summary` method."""
     mock_get_pretty_command_line_invocation.return_value = (
@@ -273,7 +263,7 @@ def test_print_script_execution_summary(
         "Ran the following",
         "Commands executed",
         "Timing results",
-        "Script result"
+        "Script result",
     ]
     details = (
         [mock_get_pretty_command_line_invocation.return_value]
@@ -290,8 +280,7 @@ def test_print_script_execution_summary(
 
 
 def test_raise_parser_error(
-    ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    ds: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Test the :func:`raise_parser_error` method."""
     error_message = (
