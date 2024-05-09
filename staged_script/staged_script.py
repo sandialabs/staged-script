@@ -53,13 +53,13 @@ def lazy_property(func: Callable) -> property:
     """
     attr_name = f"_lazy_{func.__name__}"
 
-    @property
+    @property  # type: ignore[misc]
     def _lazy_property(self):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, func(self))
         return getattr(self, attr_name)
 
-    return _lazy_property
+    return _lazy_property  # type: ignore[return-value]
 
 
 class StageDuration(NamedTuple):
@@ -471,7 +471,9 @@ class StagedScript:
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """
-        __class__._validate_stage_name(stage_name)
+        __class__._validate_stage_name(  # type: ignore[name-defined]
+            stage_name
+        )
 
         def decorator(func: Callable) -> Callable:
             def get_phase_method(  # noqa: D417
@@ -494,7 +496,10 @@ class StagedScript:
                 custom_method = getattr(
                     self, f"{method_name}_{stage_name}", False
                 )
-                return custom_method or getattr(self, method_name)
+                return (
+                    custom_method  # type: ignore[return-value]
+                    or getattr(self, method_name)
+                )
 
             def run_retryable_phases(  # noqa: D417
                 self,
@@ -821,7 +826,7 @@ class StagedScript:
                 seconds=retry.statistics["delay_since_first_attempt"]
             )
             self.console.log(
-                self.print_heading(
+                self.print_heading(  # type: ignore[func-returns-value]
                     f"Abandoning retrying the {self.current_stage!r} stage.  "
                     f"Total attempts:  {retry.statistics['attempt_number']}.  "
                     f"Total time:  {stage_time}.",
