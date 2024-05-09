@@ -33,7 +33,7 @@ def test_print_dry_run_message(
     assert expected in captured.out
 
 
-def test_validate_stage_name() -> None:
+def test__validate_stage_name() -> None:
     """Test the :func:`validate_stage_name` method."""
     StagedScript._validate_stage_name("valid")
 
@@ -42,7 +42,7 @@ def test_validate_stage_name() -> None:
     "stage_name",
     ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
 )  # yapf: disable
-def test_validate_stage_name_raises(stage_name: str) -> None:
+def test__validate_stage_name_raises(stage_name: str) -> None:
     """Ensure :func:`validate_stage_name` raises an exception when needed."""
     with pytest.raises(
         ValueError,
@@ -135,7 +135,7 @@ def test__prepare_to_retry_stage(
         assert text in captured.out
 
 
-def test_get_timing_report(
+def test__get_timing_report(
     script: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Test the :func:`_get_timing_report` method."""
