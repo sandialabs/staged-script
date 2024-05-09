@@ -1001,7 +1001,7 @@ class StagedScript:
             or (print_command is None and self.print_commands is True)
         ):
             self.console.log(f"Executing:  {command}")
-        return subprocess.run(command, check=False, **kwargs)
+        return subprocess.run(command, check=False, **kwargs)  # noqa: S603
 
     #
     # Internal helper methods.
