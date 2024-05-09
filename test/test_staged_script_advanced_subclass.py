@@ -56,7 +56,7 @@ class MyAdvancedScript(StagedScript):
 
 
 @pytest.fixture()
-def mas() -> MyAdvancedScript:
+def script() -> MyAdvancedScript:
     """Create a :class:`MyAdvancedScript` object to be used by tests."""
     my_advanced_script = MyAdvancedScript({"test"})
     my_advanced_script.console = Console(log_time=False, log_path=False)
@@ -103,7 +103,7 @@ def test_stage(  # noqa: PLR0913
     custom_skip_stage: bool,  # noqa: FBT001
     custom_end_stage: bool,  # noqa: FBT001
     custom_post_stage: bool,  # noqa: FBT001
-    mas: MyAdvancedScript,
+    script: MyAdvancedScript,
     capsys: pytest.CaptureFixture,
 ) -> None:
     """
@@ -111,29 +111,29 @@ def test_stage(  # noqa: PLR0913
 
     This case does not include retrying the stage.
     """
-    mas.parse_args([])
-    mas.stages_to_run = stages_to_run
+    script.parse_args([])
+    script.stages_to_run = stages_to_run
     if custom_pre_stage:
-        mas._run_pre_stage_actions_test = lambda: print(
+        script._run_pre_stage_actions_test = lambda: print(
             "inside '_run_pre_stage_actions_test' function"
         )
     if custom_begin_stage:
-        mas._begin_stage_test = lambda heading: print(
+        script._begin_stage_test = lambda heading: print(
             "inside '_begin_stage_test' function"
         )
     if custom_skip_stage:
-        mas._skip_stage_test = lambda: print(
+        script._skip_stage_test = lambda: print(
             "inside '_skip_stage_test' function"
         )
     if custom_end_stage:
-        mas._end_stage_test = lambda: print(
+        script._end_stage_test = lambda: print(
             "inside '_end_stage_test' function"
         )
     if custom_post_stage:
-        mas._run_post_stage_actions_test = lambda: print(
+        script._run_post_stage_actions_test = lambda: print(
             "inside '_run_post_stage_actions_test' function"
         )
-    mas.run_test()
+    script.run_test()
     captured = capsys.readouterr()
     index = 0
     phases = [
@@ -160,7 +160,7 @@ def test_stage_retry(
     custom_prepare_to_retry: bool,  # noqa: FBT001
     custom_handle_retry_error: bool,  # noqa: FBT001
     retry_attempts: int,
-    mas: MyAdvancedScript,
+    script: MyAdvancedScript,
     capsys: pytest.CaptureFixture,
 ) -> None:
     """
@@ -168,17 +168,17 @@ def test_stage_retry(
 
     This case includes retrying the stage.
     """
-    mas.parse_args(shlex.split(f"--test-retry-attempts {retry_attempts}"))
-    mas.stages_to_run = {"test"}
+    script.parse_args(shlex.split(f"--test-retry-attempts {retry_attempts}"))
+    script.stages_to_run = {"test"}
     if custom_prepare_to_retry:
-        mas._prepare_to_retry_stage_test = lambda retry_state: print(
+        script._prepare_to_retry_stage_test = lambda retry_state: print(
             "inside '_prepare_to_retry_stage_test' function"
         )
     if custom_handle_retry_error:
-        mas._handle_stage_retry_error_test = lambda retry: print(
+        script._handle_stage_retry_error_test = lambda retry: print(
             "inside '_handle_stage_retry_error_test' function"
         )
-    mas.run_test(retry=True)
+    script.run_test(retry=True)
     captured = capsys.readouterr()
     index = 0
     phases = [
