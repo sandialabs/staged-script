@@ -1,16 +1,21 @@
-#!/usr/bin/env python3
+"""
+The ``staged_script`` module.
+
+Provides the :class:`StagedScript` base class to extend when creating
+your own staged scripts, along with some helpers.
+"""
+
 import functools
 import re
 import shlex
 import subprocess
-import sys
 from argparse import (
     ArgumentDefaultsHelpFormatter,
     ArgumentParser,
     Namespace,
-    RawDescriptionHelpFormatter
+    RawDescriptionHelpFormatter,
 )
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Callable, NamedTuple
@@ -21,16 +26,11 @@ from rich.console import Console, Group
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.table import Table
+from reverse_argparse import ReverseArgumentParser, quote_arg_if_necessary
 from tenacity import RetryCallState, RetryError, Retrying, TryAgain
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
-
-sys.path.append(str(Path(__file__).resolve().parents[3] / "python"))
-from reverse_argparse import (  # noqa: E402
-    ReverseArgumentParser,
-    quote_arg_if_necessary
-)
 
 rich.traceback.install()
 
@@ -38,6 +38,7 @@ rich.traceback.install()
 def lazy_property(func: Callable) -> property:
     """
     A decorator to make it such that a property is lazily evaluated.
+
     When the property is first accessed, the object will not yet have a
     corresponding attribute, so the value will be computed by executing
     :arg:`func`.  Any time the property is accessed thereafter, the
@@ -52,46 +53,56 @@ def lazy_property(func: Callable) -> property:
     """
     attr_name = f"_lazy_{func.__name__}"
 
-    @property
+    @property  # type: ignore[misc]
     def _lazy_property(self):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, func(self))
         return getattr(self, attr_name)
 
-    return _lazy_property
+    return _lazy_property  # type: ignore[return-value]
 
 
 class StageDuration(NamedTuple):
     """
+    The duration of a stage.
+
     Define a mapping from stage names to how long they took to run.  See
     :attr:`StagedScript.durations` for details.
     """
+
     stage: str
     duration: timedelta
 
 
 class RetryStage(TryAgain):
     """
+    Trigger the retry of a stage.
+
     Define an exception to be raised by subclass developers to indicate
     that a stage should be retried.
     """
+
     pass
 
 
 class HelpFormatter(
-    ArgumentDefaultsHelpFormatter,
-    RawDescriptionHelpFormatter
+    ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter
 ):
     """
+    The help formatter for the argument parser.
+
     Define a formatter class to be used by the argument parser that both
     treats the description as raw text (doesn't do any automatic
     formatting) and shows default values of arguments.
     """
+
     pass
 
 
 class StagedScript:
     """
+    The base class for all staged scripts.
+
     This serves as a base class for any Python scripts intended to drive
     a series of commands in the underlying shell.  It's built around the
     fundamental concept of a "stage", in that such scripts are typically
@@ -160,9 +171,10 @@ class StagedScript:
     def __init__(
         self,
         stages: set[str],
+        *,
         console_force_terminal: bool | None = None,
         console_log_path: bool = True,
-        print_commands: bool = True
+        print_commands: bool = True,
     ):
         """
         Initialize a :class:`StagedScript` object.
@@ -191,8 +203,7 @@ class StagedScript:
         self.args = Namespace()
         self.commands_executed: list[str] = []
         self.console = Console(
-            force_terminal=console_force_terminal,
-            log_path=console_log_path
+            force_terminal=console_force_terminal, log_path=console_log_path
         )
         self.current_stage = "CURRENT STAGE NOT SET"
         self.dry_run = False
@@ -201,14 +212,16 @@ class StagedScript:
         self.script_name = Path(__main__.__file__).name
         self.script_stem = Path(__main__.__file__).stem
         self.script_success = True
-        self.stage_start_time = datetime.now()
+        self.stage_start_time = datetime.now(tz=timezone.utc)
         self.stages = stages
         self.stages_to_run: set[str] = set()
-        self.start_time = datetime.now()
+        self.start_time = datetime.now(tz=timezone.utc)
 
     @staticmethod
     def _validate_stage_name(stage_name: str) -> None:
         """
+        Validate the stage name.
+
         Ensure the stage name consists of only lowercase letters.  This
         is both to simplify implementation details within the class, and
         to provide the best user experience for users of your
@@ -221,10 +234,11 @@ class StagedScript:
             ValueError:  If the stage name is invalid.
         """
         if not re.match("^[a-z]+$", stage_name):
-            raise ValueError(
+            message = (
                 f"Stage name {stage_name!r} must contain only lowercase "
                 "letters."
             )
+            raise ValueError(message)
 
     #
     # Parse the command line arguments.
@@ -233,6 +247,8 @@ class StagedScript:
     @lazy_property
     def parser(self) -> ArgumentParser:
         """
+        The base argument parser.
+
         Create an :class:`ArgumentParser` for all the arguments made
         available by this base class.  This should be overridden in
         subclasses as follows:
@@ -298,32 +314,30 @@ class StagedScript:
             "subclass.  See the docstring for details."
         )
         ap = ArgumentParser(
-            description=description,
-            formatter_class=HelpFormatter
+            description=description, formatter_class=HelpFormatter
         )
         ap.add_argument(
             "--stage",
             choices=self.stages,
             nargs="+",
-            help="Which stages to run."
+            help="Which stages to run.",
         )
         ap.add_argument(
             "--dry-run",
             action="store_true",
             help="If specified, don't actually run the commands in the shell; "
-            "instead print the commands that would have been executed."
+            "instead print the commands that would have been executed.",
         )
         if self.stages:
             self.retry_arg_group = ap.add_argument_group(
-                "retry",
-                "Additional options for retrying stages."
+                "retry", "Additional options for retrying stages."
             )
             for stage in self.stages:
                 retry_attempts = self.retry_arg_group.add_argument(
                     f"--{stage}-retry-attempts",
                     default=0,
                     type=int,
-                    help=f"How many times to retry the {stage!r} stage."
+                    help=f"How many times to retry the {stage!r} stage.",
                 )
                 setattr(self, f"{stage}_retry_attempts_arg", retry_attempts)
                 retry_delay = self.retry_arg_group.add_argument(
@@ -331,7 +345,7 @@ class StagedScript:
                     default=0,
                     type=float,
                     help="How long to wait (in seconds) before retrying the "
-                    f"{stage!r} stage."
+                    f"{stage!r} stage.",
                 )
                 setattr(self, f"{stage}_retry_delay_arg", retry_delay)
                 retry_timeout = self.retry_arg_group.add_argument(
@@ -339,13 +353,15 @@ class StagedScript:
                     default=60,
                     type=int,
                     help="How long to wait (in seconds) before giving up on "
-                    f"retrying the {stage!r} stage."
+                    f"retrying the {stage!r} stage.",
                 )
                 setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
         return ap
 
     def parse_args(self, argv: list[str]) -> None:
         """
+        Parse the command line arguments.
+
         Parse the command line arguments supplied by this base class.
         The recommendation is to save any arguments, perhaps with some
         transformations, as attributes of your subclass for ease of
@@ -375,12 +391,14 @@ class StagedScript:
             for retry_arg in [
                 f"{stage}_retry_attempts",
                 f"{stage}_retry_delay",
-                f"{stage}_retry_timeout"
+                f"{stage}_retry_timeout",
             ]:
                 setattr(self, retry_arg, getattr(self.args, retry_arg, None))
 
     def raise_parser_error(self, message):
         """
+        Raise a parser error.
+
         Exit the script with a message indicating what went wrong when
         parsing the command line arguments.  To be used by subclass
         developers in the midst of :func:`parse_args`.
@@ -403,6 +421,8 @@ class StagedScript:
     @staticmethod
     def stage(stage_name: str, heading: str) -> Callable:
         """
+        Convert a method to a stage.
+
         A decorator to take a function and convert it to a conceptual
         stage of a script.  Each stage consists of the following phases:
 
@@ -451,11 +471,15 @@ class StagedScript:
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """
-        __class__._validate_stage_name(stage_name)
+        __class__._validate_stage_name(  # type: ignore[name-defined]
+            stage_name
+        )
 
         def decorator(func: Callable) -> Callable:
-
-            def get_phase_method(self, method_name: str) -> Callable:
+            def get_phase_method(  # noqa: D417
+                self,
+                method_name: str,
+            ) -> Callable:
                 """
                 Get the method to run for a phase of a stage.
 
@@ -470,14 +494,21 @@ class StagedScript:
                     otherwise.
                 """
                 custom_method = getattr(
-                    self,
-                    f"{method_name}_{stage_name}",
-                    False
+                    self, f"{method_name}_{stage_name}", False
                 )
-                return custom_method or getattr(self, method_name)
+                return (
+                    custom_method  # type: ignore[return-value]
+                    or getattr(self, method_name)
+                )
 
-            def run_retryable_phases(self, *args, **kwargs) -> None:
+            def run_retryable_phases(  # noqa: D417
+                self,
+                *args,
+                **kwargs,
+            ) -> None:
                 """
+                Run the retryable phases.
+
                 Run the phases of the stage that are "retryable," namely
                 the begin-stage actions, stage body (including skip
                 actions, if applicable), and end-stage actions.  When a
@@ -502,14 +533,16 @@ class StagedScript:
                 else:
                     try:
                         func(self, *args, **kwargs)
-                    except Exception as e:
+                    except Exception:
                         get_phase_method(self, "_end_stage")()
-                        raise e
+                        raise
                 get_phase_method(self, "_end_stage")()
 
             @functools.wraps(func)
             def wrapper(self, *args, **kwargs) -> None:
                 """
+                Turn a function into a stage.
+
                 Wrap the given ``func`` in the various phases of a
                 conceptual stage.
                 """
@@ -525,9 +558,8 @@ class StagedScript:
                     stop=(stop_after_timeout | stop_after_max_attempts),
                     wait=wait_fixed(delay),
                     before_sleep=get_phase_method(
-                        self,
-                        "_prepare_to_retry_stage"
-                    )
+                        self, "_prepare_to_retry_stage"
+                    ),
                 )
                 try:
                     retry(run_retryable_phases, self, *args, **kwargs)
@@ -545,8 +577,9 @@ class StagedScript:
 
     def _run_pre_stage_actions(self) -> None:
         """
-        Run a series of commands before a stage actually starts.  This
-        is implemented here as a no-op, but subclass developers can
+        Run a series of commands before a stage actually starts.
+
+        This is implemented here as a no-op, but subclass developers can
         override it if they wish to always perform certain actions
         before stages get underway (e.g., maybe you want to log some
         details on the state of the system, etc.).
@@ -600,7 +633,7 @@ class StagedScript:
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """
-        self.stage_start_time = datetime.now()
+        self.stage_start_time = datetime.now(tz=timezone.utc)
         self.print_heading(heading)
 
     def _skip_stage(self) -> None:
@@ -663,18 +696,19 @@ class StagedScript:
                 self._end_stage()  # Optional
                 # Insert more actions here.
         """
-        stage_duration = datetime.now() - self.stage_start_time
+        stage_duration = datetime.now(tz=timezone.utc) - self.stage_start_time
         self.durations.append(
             StageDuration(self.current_stage, stage_duration)
         )  # yapf: disable
         self.console.log(
-            f"`{self.current_stage}` stage duration:  {str(stage_duration)}"
+            f"`{self.current_stage}` stage duration:  {stage_duration!s}"
         )
 
     def _run_post_stage_actions(self) -> None:
         """
-        Run a series of commands after a stage wraps up.  This is
-        implemented here as a no-op, but subclass developers can
+        Run a series of commands after a stage wraps up.
+
+        This is implemented here as a no-op, but subclass developers can
         override it if they wish to always perform certain actions
         after stages complete and before execution moves on with the
         rest of the script (e.g., maybe you want to log some details on
@@ -693,9 +727,11 @@ class StagedScript:
 
     def _prepare_to_retry_stage(self, retry_state: RetryCallState) -> None:
         """
-        Prepare to retry a stage.  This method will be executed after
-        the **End-Stage Actions** of one attempt and before the
-        **Begin-Stage Actions** of a following attempt.
+        Prepare to retry a stage.
+
+        This method will be executed after the **End-Stage Actions** of
+        one attempt and before the **Begin-Stage Actions** of a
+        following attempt.
 
         If subclass developers wish to extend the **Prepare-to-Retry
         Actions**, they can do so with the following:
@@ -740,11 +776,10 @@ class StagedScript:
             f"stage...[/]\n{retry_state}"
         )
 
-    def _handle_stage_retry_error(
-        self,
-        retry: Retrying
-    ) -> None:
+    def _handle_stage_retry_error(self, retry: Retrying) -> None:
         """
+        Handle a stage retry error.
+
         When a stage has exhausted the specified retry conditions,
         handle the thrown :class:`RetryError` appropriately.
 
@@ -784,20 +819,20 @@ class StagedScript:
                 information about the retrying that was done.
         """
         retry_attempts = getattr(
-            self,
-            f"{self.current_stage}_retry_attempts",
-            0
+            self, f"{self.current_stage}_retry_attempts", 0
         )
         if retry_attempts > 0:
             stage_time = timedelta(
                 seconds=retry.statistics["delay_since_first_attempt"]
             )
-            self.console.log(self.print_heading(
-                f"Abandoning retrying the {self.current_stage!r} stage.  "
-                f"Total attempts:  {retry.statistics['attempt_number']}.  "
-                f"Total time:  {stage_time}.",
-                color="red"
-            ))
+            self.console.log(
+                self.print_heading(  # type: ignore[func-returns-value]
+                    f"Abandoning retrying the {self.current_stage!r} stage.  "
+                    f"Total attempts:  {retry.statistics['attempt_number']}.  "
+                    f"Total time:  {stage_time}.",
+                    color="red",
+                )
+            )
 
     #
     # Additional methods to be used or overridden in subclasses.
@@ -805,6 +840,8 @@ class StagedScript:
 
     def pretty_print_command(self, command: str, indent: int = 4) -> str:
         """
+        Pretty-print a command.
+
         Take a command executed in the shell and pretty-print it by
         inserting newlines where appropriate:
 
@@ -833,10 +870,12 @@ class StagedScript:
                 lines.append(
                     f"{args.pop(0)} {quote_arg_if_necessary(args.pop(0))}"
                 )
-        return (" \\\n" + " "*indent).join(lines)
+        return (" \\\n" + " " * indent).join(lines)
 
     def print_dry_run_message(self, message: str, *, indent: int = 0) -> None:
         """
+        Print a dry-run message.
+
         Print a message indicating that something is happening due to
         the script running in dry-run mode.
 
@@ -854,8 +893,9 @@ class StagedScript:
 
     def print_heading(self, message: str, *, color: str = "cyan") -> None:
         """
-        Print a heading to indicate at a high level what the script is
-        doing.
+        Print a heading.
+
+        To indicate at a high level what the script is doing.
 
         Args:
             message:  The message to print.
@@ -902,9 +942,10 @@ class StagedScript:
             "Commands executed": "\n".join(self.commands_executed),
             "Timing results": self._get_timing_report(),
             "Script result": (
-                "[bold green]Success" if self.script_success
+                "[bold green]Success"
+                if self.script_success
                 else "[bold red]Failure"
-            )
+            ),
         }
         if extra_sections is not None:
             sections |= extra_sections
@@ -919,9 +960,10 @@ class StagedScript:
     def run(
         self,
         command: str,
+        *,
         pretty_print: bool = False,
         print_command: bool | None = None,
-        **kwargs
+        **kwargs,
     ) -> CompletedProcess:
         """
         Run a command in the underlying shell.
@@ -946,19 +988,16 @@ class StagedScript:
                 f"The command executed would be:  {command}"
             )
             return CompletedProcess(
-                args=f"echo {command}",
-                returncode=0,
-                stdout=command
+                args=f"echo {command}", returncode=0, stdout=command
             )
         self.commands_executed.append(
             self.pretty_print_command(command) if pretty_print else command
         )
-        if (
-            print_command is True
-            or (print_command is None and self.print_commands is True)
+        if print_command is True or (
+            print_command is None and self.print_commands is True
         ):
             self.console.log(f"Executing:  {command}")
-        return subprocess.run(command, **kwargs)
+        return subprocess.run(command, check=False, **kwargs)  # noqa: S603
 
     #
     # Internal helper methods.
@@ -975,7 +1014,7 @@ class StagedScript:
         table.add_column(header="Stage", footer="Total")
         table.add_column(
             header="Duration",
-            footer=str(datetime.now() - self.start_time)
+            footer=str(datetime.now(tz=timezone.utc) - self.start_time),
         )
         for _ in self.durations:
             table.add_row(_.stage, str(_.duration))

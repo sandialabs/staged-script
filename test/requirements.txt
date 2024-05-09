@@ -1,0 +1,9 @@
+# Requirements for testing `staged-script`.
+
+mypy
+pre-commit
+pyroma
+pytest
+pytest-cov
+pytest-mock
+ruff

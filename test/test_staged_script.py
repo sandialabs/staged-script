@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
+"""Unit tests for ``staged-script``."""
+
 import shlex
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from subprocess import CompletedProcess
 from unittest.mock import MagicMock, patch
 
@@ -9,21 +10,22 @@ from rich.console import Console
 
 from python.staged_script.staged_script.staged_script import (
     StagedScript,
-    StageDuration
+    StageDuration,
 )
 
 
 @pytest.fixture()
 def ds() -> StagedScript:
+    """Create a :class:`StagedScript` object to be used by tests."""
     staged_script = StagedScript(set())
     staged_script.console = Console(log_time=False, log_path=False)
     return staged_script
 
 
 def test_print_dry_run_message(
-    ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    ds: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
+    """Test the :func:`print_dry_run_message` method."""
     message = "dry run message"
     expected = f"DRY-RUN MODE:  {message}"
     ds.print_dry_run_message(message)
@@ -32,6 +34,7 @@ def test_print_dry_run_message(
 
 
 def test_validate_stage_name() -> None:
+    """Test the :func:`validate_stage_name` method."""
     StagedScript._validate_stage_name("valid")
 
 
@@ -40,13 +43,16 @@ def test_validate_stage_name() -> None:
     ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
 )  # yapf: disable
 def test_validate_stage_name_raises(stage_name: str) -> None:
-    with pytest.raises(ValueError) as e:
+    """Ensure :func:`validate_stage_name` raises an exception when needed."""
+    with pytest.raises(
+        ValueError,
+        match=f"'{stage_name}' must contain only lowercase letters",
+    ):
         StagedScript._validate_stage_name(stage_name)
-    msg = e.value.args[0]
-    assert f"'{stage_name}' must contain only lowercase letters" in msg
 
 
 def test__begin_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
+    """Test the :func:`_begin_stage` method."""
     message = "begin stage"
     ds._begin_stage(message)
     captured = capsys.readouterr()
@@ -55,9 +61,10 @@ def test__begin_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
 
 
 def test__end_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
+    """Test the :func:`_end_stage` method."""
     stage_name = "test"
     ds.current_stage = stage_name
-    ds.stage_start_time = datetime.now()
+    ds.stage_start_time = datetime.now(tz=timezone.utc)
     ds._end_stage()
     captured = capsys.readouterr()
     assert stage_name in [_.stage for _ in ds.durations]
@@ -66,6 +73,7 @@ def test__end_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
 
 
 def test__skip_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
+    """Test the :func:`_skip_stage` method."""
     ds._skip_stage()
     captured = capsys.readouterr()
     assert "Skipping this stage." in captured.out
@@ -77,14 +85,15 @@ def test__handle_stage_retry_error(
     mock_Retrying: MagicMock,
     retry_attempts: int,
     ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
+    """Test the :func:`_handle_stage_retry_error` method."""
     ds.current_stage = "test"
     ds.test_retry_attempts = retry_attempts
     retry = mock_Retrying()
     retry.statistics = {
         "delay_since_first_attempt": 1234,
-        "attempt_number": retry_attempts
+        "attempt_number": retry_attempts,
     }
     ds._handle_stage_retry_error(retry)
     captured = capsys.readouterr()
@@ -96,7 +105,7 @@ def test__handle_stage_retry_error(
             "Total attempts:",
             "5.",
             "Total time:",
-            "0:20:34."
+            "0:20:34.",
         ]:
             assert text in captured.out
 
@@ -105,8 +114,9 @@ def test__handle_stage_retry_error(
 def test__prepare_to_retry_stage(
     mock_RetryCallState: MagicMock,
     ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
+    """Test the :func:`_prepare_to_retry_stage` method."""
     ds.current_stage = "test"
     retry_state = mock_RetryCallState()
     retry_state.__repr__ = lambda self: "mock_RetryCallState.__repr__"
@@ -114,15 +124,15 @@ def test__prepare_to_retry_stage(
     captured = capsys.readouterr()
     for text in [
         "Preparing to retry the 'test' stage...",
-        "mock_RetryCallState.__repr__"
+        "mock_RetryCallState.__repr__",
     ]:
         assert text in captured.out
 
 
 def test_get_timing_report(
-    ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    ds: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
+    """Test the :func:`_get_timing_report` method."""
     ds.durations = [
         StageDuration(
             "first",
@@ -143,33 +153,26 @@ def test_get_timing_report(
 
 
 @pytest.mark.parametrize(
-    "command, expected",
-    [("command --foo",
-      "command \\\n    --foo"),
-     ("command --foo bar baz",
-      "command \\\n    --foo bar \\\n    baz"),
-     ("command foo bar baz",
-      "command \\\n    foo \\\n    bar \\\n    baz"),
-     ("command --foo --bar baz",
-      "command \\\n    --foo \\\n    --bar baz"),
-     ("command foo bar baz",
-      "command \\\n    foo \\\n    bar \\\n    baz"),
-     ("command --foo 'bar baz'",
-      "command \\\n    --foo 'bar baz'"),
-     ("command -f bar",
-      "command \\\n    -f \\\n    bar"),
-     ("command --foo -b",
-      "command \\\n    --foo \\\n    -b")]
+    ("command", "expected"),
+    [
+        ("command --foo", "command \\\n    --foo"),
+        ("command --foo bar baz", "command \\\n    --foo bar \\\n    baz"),
+        ("command foo bar baz", "command \\\n    foo \\\n    bar \\\n    baz"),
+        ("command --foo --bar baz", "command \\\n    --foo \\\n    --bar baz"),
+        ("command --foo 'bar baz'", "command \\\n    --foo 'bar baz'"),
+        ("command -f bar", "command \\\n    -f \\\n    bar"),
+        ("command --foo -b", "command \\\n    --foo \\\n    -b"),
+    ],
 )
 def test_pretty_print_command(
-    command: str,
-    expected: str,
-    ds: StagedScript
+    command: str, expected: str, ds: StagedScript
 ) -> None:
+    """Test the :func:`pretty_print_command` method."""
     assert ds.pretty_print_command(command) == expected
 
 
 def test_parse_args(ds: StagedScript) -> None:
+    """Test the :func:`parse_args` method."""
     ds.stages = {"first", "second", "third"}
     ds.parse_args(shlex.split("--dry-run --stage first third"))
     assert ds.dry_run is True
@@ -180,10 +183,11 @@ def test_parse_args(ds: StagedScript) -> None:
 @patch("subprocess.run")
 def test_run(
     mock_run: MagicMock,
-    print_commands: bool,
+    print_commands: bool,  # noqa: FBT001
     ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
+    """Test the :func:`run` method."""
     command = "echo 'hello world'"
     mock_run.return_value = CompletedProcess(args=command, returncode=0)
     ds.print_commands = print_commands
@@ -198,10 +202,9 @@ def test_run(
 
 @patch("subprocess.run")
 def test_run_override_print_commands(
-    mock_run: MagicMock,
-    ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    mock_run: MagicMock, ds: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
+    """Ensure :func:`run` prints the command executed when appropriate."""
     command = "echo 'hello world'"
     mock_run.return_value = CompletedProcess(args=command, returncode=0)
     ds.run(command, print_command=False)
@@ -219,10 +222,10 @@ def test_run_override_print_commands(
     [
         {
             "More information": "Additional details.",
-            "Another section": "With still more information."
+            "Another section": "With still more information.",
         },
-        None
-    ]
+        None,
+    ],
 )
 @patch(
     "reverse_argparse.ReverseArgumentParser."
@@ -231,10 +234,11 @@ def test_run_override_print_commands(
 def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,
     extras: dict[str, str] | None,
-    script_success: bool,
+    script_success: bool,  # noqa: FBT001
     ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    capsys: pytest.CaptureFixture,
 ) -> None:
+    """Test the :func:`print_script_execution_summary` method."""
     mock_get_pretty_command_line_invocation.return_value = (
         "command line invocation"
     )
@@ -259,7 +263,7 @@ def test_print_script_execution_summary(
         "Ran the following",
         "Commands executed",
         "Timing results",
-        "Script result"
+        "Script result",
     ]
     details = (
         [mock_get_pretty_command_line_invocation.return_value]
@@ -276,9 +280,9 @@ def test_print_script_execution_summary(
 
 
 def test_raise_parser_error(
-    ds: StagedScript,
-    capsys: pytest.CaptureFixture
+    ds: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
+    """Test the :func:`raise_parser_error` method."""
     error_message = (
         "This is a lengthy error message explaining what exactly went wrong, "
         "where, and why.  It's so long it should get wrapped over multiple "
@@ -287,6 +291,6 @@ def test_raise_parser_error(
     with pytest.raises(SystemExit):
         ds.raise_parser_error(error_message)
     captured = capsys.readouterr()
-    expected = error_message.split() + ["usage:", "--dry-run", "--stage"]
+    expected = [*error_message.split(), "usage:", "--dry-run", "--stage"]
     for term in expected:
         assert term in captured.out
