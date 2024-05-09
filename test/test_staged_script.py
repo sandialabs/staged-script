@@ -1,6 +1,6 @@
 """Unit tests for ``staged-script``."""
 import shlex
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from subprocess import CompletedProcess
 from unittest.mock import MagicMock, patch
 
@@ -64,7 +64,7 @@ def test__end_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
     """Test the :func:`_end_stage` method."""
     stage_name = "test"
     ds.current_stage = stage_name
-    ds.stage_start_time = datetime.now()
+    ds.stage_start_time = datetime.now(tz=timezone.utc)
     ds._end_stage()
     captured = capsys.readouterr()
     assert stage_name in [_.stage for _ in ds.durations]

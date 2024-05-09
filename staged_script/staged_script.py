@@ -14,7 +14,7 @@ from argparse import (
     Namespace,
     RawDescriptionHelpFormatter
 )
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Callable, NamedTuple
@@ -210,10 +210,10 @@ class StagedScript:
         self.script_name = Path(__main__.__file__).name
         self.script_stem = Path(__main__.__file__).stem
         self.script_success = True
-        self.stage_start_time = datetime.now()
+        self.stage_start_time = datetime.now(tz=timezone.utc)
         self.stages = stages
         self.stages_to_run: set[str] = set()
-        self.start_time = datetime.now()
+        self.start_time = datetime.now(tz=timezone.utc)
 
     @staticmethod
     def _validate_stage_name(stage_name: str) -> None:
@@ -632,7 +632,7 @@ class StagedScript:
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """
-        self.stage_start_time = datetime.now()
+        self.stage_start_time = datetime.now(tz=timezone.utc)
         self.print_heading(heading)
 
     def _skip_stage(self) -> None:
@@ -695,7 +695,7 @@ class StagedScript:
                 self._end_stage()  # Optional
                 # Insert more actions here.
         """
-        stage_duration = datetime.now() - self.stage_start_time
+        stage_duration = datetime.now(tz=timezone.utc) - self.stage_start_time
         self.durations.append(
             StageDuration(self.current_stage, stage_duration)
         )  # yapf: disable
@@ -1018,7 +1018,7 @@ class StagedScript:
         table.add_column(header="Stage", footer="Total")
         table.add_column(
             header="Duration",
-            footer=str(datetime.now() - self.start_time)
+            footer=str(datetime.now(tz=timezone.utc) - self.start_time)
         )
         for _ in self.durations:
             table.add_row(_.stage, str(_.duration))
