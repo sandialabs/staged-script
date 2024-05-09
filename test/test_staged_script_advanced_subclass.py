@@ -1,5 +1,11 @@
 """Integration tests for an advanced ``staged-script`` use case."""
 
+# © 2024 National Technology & Engineering Solutions of Sandia, LLC
+# (NTESS).  Under the terms of Contract DE-NA0003525 with NTESS, the
+# U.S. Government retains certain rights in this software.
+
+# SPDX-License-Identifier: BSD-3-Clause
+
 import shlex
 
 import pytest
