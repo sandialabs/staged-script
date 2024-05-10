@@ -120,24 +120,24 @@ def test_stage(  # noqa: PLR0913
     script.parse_args([])
     script.stages_to_run = stages_to_run
     if custom_pre_stage:
-        script._run_pre_stage_actions_test = lambda: print(
-            "inside '_run_pre_stage_actions_test' function"
+        script._run_pre_stage_actions_test = (  # type: ignore[attr-defined]
+            lambda: print("inside '_run_pre_stage_actions_test' function")
         )
     if custom_begin_stage:
-        script._begin_stage_test = lambda heading: print(
-            "inside '_begin_stage_test' function"
+        script._begin_stage_test = (  # type: ignore[attr-defined]
+            lambda heading: print("inside '_begin_stage_test' function")
         )
     if custom_skip_stage:
-        script._skip_stage_test = lambda: print(
+        script._skip_stage_test = lambda: print(  # type: ignore[attr-defined]
             "inside '_skip_stage_test' function"
         )
     if custom_end_stage:
-        script._end_stage_test = lambda: print(
+        script._end_stage_test = lambda: print(  # type: ignore[attr-defined]
             "inside '_end_stage_test' function"
         )
     if custom_post_stage:
-        script._run_post_stage_actions_test = lambda: print(
-            "inside '_run_post_stage_actions_test' function"
+        script._run_post_stage_actions_test = (  # type: ignore[attr-defined]
+            lambda: print("inside '_run_post_stage_actions_test' function")
         )
     script.run_test()
     captured = capsys.readouterr()
@@ -177,12 +177,16 @@ def test_stage_retry(
     script.parse_args(shlex.split(f"--test-retry-attempts {retry_attempts}"))
     script.stages_to_run = {"test"}
     if custom_prepare_to_retry:
-        script._prepare_to_retry_stage_test = lambda retry_state: print(
-            "inside '_prepare_to_retry_stage_test' function"
+        script._prepare_to_retry_stage_test = (  # type: ignore[attr-defined]
+            lambda retry_state: print(
+                "inside '_prepare_to_retry_stage_test' function"
+            )
         )
     if custom_handle_retry_error:
-        script._handle_stage_retry_error_test = lambda retry: print(
-            "inside '_handle_stage_retry_error_test' function"
+        script._handle_stage_retry_error_test = (  # type: ignore[attr-defined]
+            lambda retry: print(
+                "inside '_handle_stage_retry_error_test' function"
+            )
         )
     script.run_test(retry=True)
     captured = capsys.readouterr()

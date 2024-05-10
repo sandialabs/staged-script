@@ -97,7 +97,7 @@ def test__handle_stage_retry_error(
 ) -> None:
     """Test the :func:`_handle_stage_retry_error` method."""
     script.current_stage = "test"
-    script.test_retry_attempts = retry_attempts
+    script.test_retry_attempts = retry_attempts  # type: ignore[attr-defined]
     retry = mock_Retrying()
     retry.statistics = {
         "delay_since_first_attempt": 1234,
