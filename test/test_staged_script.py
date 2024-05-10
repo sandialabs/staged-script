@@ -1,5 +1,11 @@
 """Unit tests for ``staged-script``."""
 
+# © 2024 National Technology & Engineering Solutions of Sandia, LLC
+# (NTESS).  Under the terms of Contract DE-NA0003525 with NTESS, the
+# U.S. Government retains certain rights in this software.
+
+# SPDX-License-Identifier: BSD-3-Clause
+
 import shlex
 from datetime import datetime, timedelta, timezone
 from subprocess import CompletedProcess
@@ -8,14 +14,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from rich.console import Console
 
-from python.staged_script.staged_script.staged_script import (
-    StagedScript,
-    StageDuration,
-)
+from staged_script import StagedScript, StageDuration
 
 
 @pytest.fixture()
-def ds() -> StagedScript:
+def script() -> StagedScript:
     """Create a :class:`StagedScript` object to be used by tests."""
     staged_script = StagedScript(set())
     staged_script.console = Console(log_time=False, log_path=False)
@@ -23,26 +26,25 @@ def ds() -> StagedScript:
 
 
 def test_print_dry_run_message(
-    ds: StagedScript, capsys: pytest.CaptureFixture
+    script: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Test the :func:`print_dry_run_message` method."""
     message = "dry run message"
     expected = f"DRY-RUN MODE:  {message}"
-    ds.print_dry_run_message(message)
+    script.print_dry_run_message(message)
     captured = capsys.readouterr()
     assert expected in captured.out
 
 
-def test_validate_stage_name() -> None:
+def test__validate_stage_name() -> None:
     """Test the :func:`validate_stage_name` method."""
     StagedScript._validate_stage_name("valid")
 
 
 @pytest.mark.parametrize(
-    "stage_name",
-    ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
-)  # yapf: disable
-def test_validate_stage_name_raises(stage_name: str) -> None:
+    "stage_name", ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
+)
+def test__validate_stage_name_raises(stage_name: str) -> None:
     """Ensure :func:`validate_stage_name` raises an exception when needed."""
     with pytest.raises(
         ValueError,
@@ -51,30 +53,36 @@ def test_validate_stage_name_raises(stage_name: str) -> None:
         StagedScript._validate_stage_name(stage_name)
 
 
-def test__begin_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
+def test__begin_stage(
+    script: StagedScript, capsys: pytest.CaptureFixture
+) -> None:
     """Test the :func:`_begin_stage` method."""
     message = "begin stage"
-    ds._begin_stage(message)
+    script._begin_stage(message)
     captured = capsys.readouterr()
     assert message in captured.out
-    assert ds.stage_start_time is not None
+    assert script.stage_start_time is not None
 
 
-def test__end_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
+def test__end_stage(
+    script: StagedScript, capsys: pytest.CaptureFixture
+) -> None:
     """Test the :func:`_end_stage` method."""
     stage_name = "test"
-    ds.current_stage = stage_name
-    ds.stage_start_time = datetime.now(tz=timezone.utc)
-    ds._end_stage()
+    script.current_stage = stage_name
+    script.stage_start_time = datetime.now(tz=timezone.utc)
+    script._end_stage()
     captured = capsys.readouterr()
-    assert stage_name in [_.stage for _ in ds.durations]
+    assert stage_name in [_.stage for _ in script.durations]
     assert "duration:" in captured.out
-    assert str(ds.durations[-1].duration) in captured.out
+    assert str(script.durations[-1].duration) in captured.out
 
 
-def test__skip_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
+def test__skip_stage(
+    script: StagedScript, capsys: pytest.CaptureFixture
+) -> None:
     """Test the :func:`_skip_stage` method."""
-    ds._skip_stage()
+    script._skip_stage()
     captured = capsys.readouterr()
     assert "Skipping this stage." in captured.out
 
@@ -84,18 +92,18 @@ def test__skip_stage(ds: StagedScript, capsys: pytest.CaptureFixture) -> None:
 def test__handle_stage_retry_error(
     mock_Retrying: MagicMock,
     retry_attempts: int,
-    ds: StagedScript,
+    script: StagedScript,
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`_handle_stage_retry_error` method."""
-    ds.current_stage = "test"
-    ds.test_retry_attempts = retry_attempts
+    script.current_stage = "test"
+    script.test_retry_attempts = retry_attempts  # type: ignore[attr-defined]
     retry = mock_Retrying()
     retry.statistics = {
         "delay_since_first_attempt": 1234,
         "attempt_number": retry_attempts,
     }
-    ds._handle_stage_retry_error(retry)
+    script._handle_stage_retry_error(retry)
     captured = capsys.readouterr()
     if retry_attempts == 0:
         assert captured.out == ""
@@ -113,14 +121,14 @@ def test__handle_stage_retry_error(
 @patch("tenacity.RetryCallState")
 def test__prepare_to_retry_stage(
     mock_RetryCallState: MagicMock,
-    ds: StagedScript,
+    script: StagedScript,
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`_prepare_to_retry_stage` method."""
-    ds.current_stage = "test"
+    script.current_stage = "test"
     retry_state = mock_RetryCallState()
     retry_state.__repr__ = lambda self: "mock_RetryCallState.__repr__"
-    ds._prepare_to_retry_stage(retry_state)
+    script._prepare_to_retry_stage(retry_state)
     captured = capsys.readouterr()
     for text in [
         "Preparing to retry the 'test' stage...",
@@ -129,25 +137,23 @@ def test__prepare_to_retry_stage(
         assert text in captured.out
 
 
-def test_get_timing_report(
-    ds: StagedScript, capsys: pytest.CaptureFixture
+def test__get_timing_report(
+    script: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Test the :func:`_get_timing_report` method."""
-    ds.durations = [
+    script.durations = [
         StageDuration(
-            "first",
-            timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
+            "first", timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
         ),
         StageDuration(
-            "second",
-            timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
-        )
-    ]  # yapf: disable
-    ds.console.print(ds._get_timing_report())
+            "second", timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
+        ),
+    ]
+    script.console.print(script._get_timing_report())
     captured = capsys.readouterr()
-    for stage in [_.stage for _ in ds.durations]:
+    for stage in [_.stage for _ in script.durations]:
         assert stage in captured.out
-    for duration in [_.duration for _ in ds.durations]:
+    for duration in [_.duration for _ in script.durations]:
         assert str(duration) in captured.out
     assert "Total" in captured.out
 
@@ -165,18 +171,18 @@ def test_get_timing_report(
     ],
 )
 def test_pretty_print_command(
-    command: str, expected: str, ds: StagedScript
+    command: str, expected: str, script: StagedScript
 ) -> None:
     """Test the :func:`pretty_print_command` method."""
-    assert ds.pretty_print_command(command) == expected
+    assert script.pretty_print_command(command) == expected
 
 
-def test_parse_args(ds: StagedScript) -> None:
+def test_parse_args(script: StagedScript) -> None:
     """Test the :func:`parse_args` method."""
-    ds.stages = {"first", "second", "third"}
-    ds.parse_args(shlex.split("--dry-run --stage first third"))
-    assert ds.dry_run is True
-    assert ds.stages_to_run == {"first", "third"}
+    script.stages = {"first", "second", "third"}
+    script.parse_args(shlex.split("--dry-run --stage first third"))
+    assert script.dry_run is True
+    assert script.stages_to_run == {"first", "third"}
 
 
 @pytest.mark.parametrize("print_commands", [True, False])
@@ -184,34 +190,34 @@ def test_parse_args(ds: StagedScript) -> None:
 def test_run(
     mock_run: MagicMock,
     print_commands: bool,  # noqa: FBT001
-    ds: StagedScript,
+    script: StagedScript,
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`run` method."""
     command = "echo 'hello world'"
     mock_run.return_value = CompletedProcess(args=command, returncode=0)
-    ds.print_commands = print_commands
-    ds.run(command)
+    script.print_commands = print_commands
+    script.run(command)
     captured = capsys.readouterr()
     if print_commands:
         assert f"Executing:  {command}" in captured.out
     else:
         assert f"Executing:  {command}" not in captured.out
-    assert command in ds.commands_executed
+    assert command in script.commands_executed
 
 
 @patch("subprocess.run")
 def test_run_override_print_commands(
-    mock_run: MagicMock, ds: StagedScript, capsys: pytest.CaptureFixture
+    mock_run: MagicMock, script: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Ensure :func:`run` prints the command executed when appropriate."""
     command = "echo 'hello world'"
     mock_run.return_value = CompletedProcess(args=command, returncode=0)
-    ds.run(command, print_command=False)
+    script.run(command, print_command=False)
     captured = capsys.readouterr()
     assert f"Executing:  {command}" not in captured.out
-    ds.print_commands = False
-    ds.run(command, print_command=True)
+    script.print_commands = False
+    script.run(command, print_command=True)
     captured = capsys.readouterr()
     assert f"Executing:  {command}" in captured.out
 
@@ -235,29 +241,27 @@ def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,
     extras: dict[str, str] | None,
     script_success: bool,  # noqa: FBT001
-    ds: StagedScript,
+    script: StagedScript,
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`print_script_execution_summary` method."""
     mock_get_pretty_command_line_invocation.return_value = (
         "command line invocation"
     )
-    ds.durations = [
+    script.durations = [
         StageDuration(
-            "first",
-            timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
+            "first", timedelta(hours=1, minutes=2, seconds=3, microseconds=4)
         ),
         StageDuration(
-            "second",
-            timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
-        )
-    ]  # yapf: disable
-    ds.commands_executed = ["foo", "bar", "baz"]
-    ds.script_success = script_success
+            "second", timedelta(hours=4, minutes=3, seconds=2, microseconds=1)
+        ),
+    ]
+    script.commands_executed = ["foo", "bar", "baz"]
+    script.script_success = script_success
     if extras is None:
-        ds.print_script_execution_summary()
+        script.print_script_execution_summary()
     else:
-        ds.print_script_execution_summary(extra_sections=extras)
+        script.print_script_execution_summary(extra_sections=extras)
     captured = capsys.readouterr()
     headings = [
         "Ran the following",
@@ -267,11 +271,11 @@ def test_print_script_execution_summary(
     ]
     details = (
         [mock_get_pretty_command_line_invocation.return_value]
-        + ds.commands_executed
-        + [_.stage for _ in ds.durations]
-        + [str(_.duration) for _ in ds.durations]
+        + script.commands_executed
+        + [_.stage for _ in script.durations]
+        + [str(_.duration) for _ in script.durations]
         + ["Success" if script_success else "Failure"]
-    )  # yapf: disable
+    )
     if extras is not None:
         headings += list(extras.keys())
         details += list(extras.values())
@@ -280,7 +284,7 @@ def test_print_script_execution_summary(
 
 
 def test_raise_parser_error(
-    ds: StagedScript, capsys: pytest.CaptureFixture
+    script: StagedScript, capsys: pytest.CaptureFixture
 ) -> None:
     """Test the :func:`raise_parser_error` method."""
     error_message = (
@@ -289,7 +293,7 @@ def test_raise_parser_error(
         "lines."
     )
     with pytest.raises(SystemExit):
-        ds.raise_parser_error(error_message)
+        script.raise_parser_error(error_message)
     captured = capsys.readouterr()
     expected = [*error_message.split(), "usage:", "--dry-run", "--stage"]
     for term in expected:

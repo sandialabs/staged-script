@@ -1,7 +1,9 @@
 """
-Setup file for the ``staged-script`` package.
+Create the ``test`` package.
 
-To install, simply ``python3 -m pip install .`` in the repository root.
+This ``__init__.py`` file creates the ``test`` package, such that tests
+can relative-import from modules in the sibling ``staged_script``
+directory.
 """
 
 # © 2024 National Technology & Engineering Solutions of Sandia, LLC
@@ -9,8 +11,3 @@ To install, simply ``python3 -m pip install .`` in the repository root.
 # U.S. Government retains certain rights in this software.
 
 # SPDX-License-Identifier: BSD-3-Clause
-
-import setuptools
-
-if __name__ == "__main__":
-    setuptools.setup()
