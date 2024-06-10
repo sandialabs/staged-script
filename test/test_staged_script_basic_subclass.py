@@ -6,6 +6,8 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 
+from typing import Set
+
 import pytest
 from rich.console import Console
 
@@ -49,7 +51,7 @@ def script() -> MyBasicScript:
 
 @pytest.mark.parametrize("stages_to_run", [{"good"}, set()])
 def test_good_stage(
-    stages_to_run: set[str],
+    stages_to_run: Set[str],
     script: MyBasicScript,
     capsys: pytest.CaptureFixture,
 ) -> None:
