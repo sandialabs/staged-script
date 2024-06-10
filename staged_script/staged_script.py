@@ -41,33 +41,6 @@ from tenacity.wait import wait_fixed
 rich.traceback.install()
 
 
-def lazy_property(func: Callable) -> property:
-    """
-    A decorator to make it such that a property is lazily evaluated.
-
-    When the property is first accessed, the object will not yet have a
-    corresponding attribute, so the value will be computed by executing
-    :arg:`func`.  Any time the property is accessed thereafter, the
-    value will just be retrieved from the object's corresponding
-    attribute.
-
-    Args:
-        func:  The function used to compute the value of the property.
-
-    Returns:
-        The lazy property decorator.
-    """
-    attr_name = f"_lazy_{func.__name__}"
-
-    @property  # type: ignore[misc]
-    def _lazy_property(self):
-        if not hasattr(self, attr_name):
-            setattr(self, attr_name, func(self))
-        return getattr(self, attr_name)
-
-    return _lazy_property  # type: ignore[return-value]
-
-
 class StageDuration(NamedTuple):
     """
     The duration of a stage.
@@ -250,7 +223,7 @@ class StagedScript:
     # Parse the command line arguments.
     #
 
-    @lazy_property
+    @functools.cached_property
     def parser(self) -> ArgumentParser:
         """
         The base argument parser.
@@ -261,7 +234,7 @@ class StagedScript:
 
         .. code-block:: python
 
-            @lazy_property
+            @functools.cached_property
             def parser(self) -> ArgumentParser:
                 ap = super().parser
                 ap.description = '''INSERT DESCRIPTION HERE'''
