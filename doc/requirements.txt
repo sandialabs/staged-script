@@ -1,0 +1,7 @@
+# Requirements for building the `staged-script` documentation.
+
+sphinx
+sphinx-autodoc-typehints
+sphinx-copybutton
+sphinx-rtd-theme
+sphinxcontrib-programoutput
