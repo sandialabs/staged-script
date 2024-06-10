@@ -1,1 +1,5 @@
 .vscode
+.coverage
+coverage.json
+coverage.xml
+**/__pycache__
