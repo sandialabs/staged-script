@@ -223,6 +223,18 @@ def test_run_override_print_commands(
     assert f"Executing:  {command}" in captured.out
 
 
+def test_run_dry_run(
+    script: StagedScript, capsys: pytest.CaptureFixture
+) -> None:
+    """Test the :func:`run` method in dry-run mode."""
+    command = "echo 'dry-run mode'"
+    script.dry_run = True
+    script.run(command)
+    captured = capsys.readouterr()
+    for _ in ["The command executed would be", command]:
+        assert _ in captured.out
+
+
 @pytest.mark.parametrize("script_success", [True, False])
 @pytest.mark.parametrize(
     "extras",

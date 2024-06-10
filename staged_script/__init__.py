@@ -16,7 +16,6 @@ from .staged_script import (
     HelpFormatter,
     RetryStage,
     StageDuration,
-    lazy_property,
 )
 
 __all__ = [
@@ -24,6 +23,5 @@ __all__ = [
     "HelpFormatter",
     "RetryStage",
     "StageDuration",
-    "lazy_property",
 ]
 __version__ = "1.0.0"

@@ -1,0 +1,35 @@
+[run]
+omit =
+    test/*
+    */.vscode/*
+branch = True
+dynamic_context = test_function
+relative_files = True
+
+[paths]
+source = staged_script
+
+[report]
+skip_covered = False
+fail_under = 100
+show_missing = True
+exclude_lines =
+    pragma: no cover
+    if 0:
+    if False:
+
+[html]
+directory = test/htmlcov
+title = staged-script Coverage Report
+show_contexts = True
+
+[xml]
+output = test/coverage.xml
+
+[json]
+output = test/coverage.json
+pretty_print = True
+show_contexts = True
+
+[lcov]
+output = test/coverage.lcov
