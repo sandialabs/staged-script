@@ -9,6 +9,7 @@
 import shlex
 from datetime import datetime, timedelta, timezone
 from subprocess import CompletedProcess
+from typing import Dict, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -239,7 +240,7 @@ def test_run_override_print_commands(
 )
 def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,
-    extras: dict[str, str] | None,
+    extras: Optional[Dict[str, str]],
     script_success: bool,  # noqa: FBT001
     script: StagedScript,
     capsys: pytest.CaptureFixture,

@@ -24,7 +24,7 @@ from argparse import (
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Callable, NamedTuple
+from typing import Callable, Dict, List, NamedTuple, Optional, Set
 
 import __main__
 import rich.traceback
@@ -122,14 +122,14 @@ class StagedScript:
     Attributes:
         args (Namespace):  The parsed command line arguments for the
             script.
-        commands_executed (list[str]):  The commands that were executed
+        commands_executed (List[str]):  The commands that were executed
             in the shell.
         console (Console):  Used to print rich text to the console.
         current_stage (str):  The name of the stage being run.
         dry_run (bool):  If ``True``, don't actually run the command
             that would be executed in the shell; instead just print it
             out.
-        durations (list[StageDuration]):  A mapping from stage names to
+        durations (List[StageDuration]):  A mapping from stage names to
             how long it took for each to run.  This is implemented as a
             ``list`` of named tuples instead of as a ``dict`` to allow
             the flexibility for stages to be run multiple times.
@@ -145,12 +145,12 @@ class StagedScript:
         script_success (bool):  Subclass developers can toggle this
             attribute to indicate whether the script has succeeded.
         stage_start_time (datetime):  The time at which a stage began.
-        stages (set[str]):  The stages registered for an instantiation
+        stages (Set[str]):  The stages registered for an instantiation
             of a :class:`StagedScript` subclass, which are used to
             automatically populate pieces of the
             :class:`ArgumentParser`.  This may be a subset of all the
             stages defined in the subclass.
-        stages_to_run (set[str]):  Which stages to run, as specified by
+        stages_to_run (Set[str]):  Which stages to run, as specified by
             the user via the command line arguments.
         start_time (datetime):  The time at which this object was
             initialized.
@@ -176,9 +176,9 @@ class StagedScript:
 
     def __init__(
         self,
-        stages: set[str],
+        stages: Set[str],
         *,
-        console_force_terminal: bool | None = None,
+        console_force_terminal: Optional[bool] = None,
         console_log_path: bool = True,
         print_commands: bool = True,
     ):
@@ -207,20 +207,20 @@ class StagedScript:
         for stage in stages:
             self._validate_stage_name(stage)
         self.args = Namespace()
-        self.commands_executed: list[str] = []
+        self.commands_executed: List[str] = []
         self.console = Console(
             force_terminal=console_force_terminal, log_path=console_log_path
         )
         self.current_stage = "CURRENT STAGE NOT SET"
         self.dry_run = False
-        self.durations: list[StageDuration] = []
+        self.durations: List[StageDuration] = []
         self.print_commands = print_commands
         self.script_name = Path(__main__.__file__).name
         self.script_stem = Path(__main__.__file__).stem
         self.script_success = True
         self.stage_start_time = datetime.now(tz=timezone.utc)
         self.stages = stages
-        self.stages_to_run: set[str] = set()
+        self.stages_to_run: Set[str] = set()
         self.start_time = datetime.now(tz=timezone.utc)
 
     @staticmethod
@@ -364,7 +364,7 @@ class StagedScript:
                 setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
         return ap
 
-    def parse_args(self, argv: list[str]) -> None:
+    def parse_args(self, argv: List[str]) -> None:
         """
         Parse the command line arguments.
 
@@ -376,7 +376,7 @@ class StagedScript:
 
         .. code-block:: python
 
-            def parse_args(self, argv: list[str]) -> None:
+            def parse_args(self, argv: List[str]) -> None:
                 super().parse_args(argv)
                 # Parse additional arguments and store as attributes.
                 self.foo = self.args.foo
@@ -912,7 +912,7 @@ class StagedScript:
         self.console.log(Panel(f"[bold]{message}", style=color))
 
     def print_script_execution_summary(
-        self, extra_sections: dict[str, str] | None = None
+        self, extra_sections: Optional[Dict[str, str]] = None
     ) -> None:
         """
         Print a summary of everything that was done by the script.
@@ -934,11 +934,11 @@ class StagedScript:
 
             def print_script_execution_summary(
                 self,
-                extra_sections: dict[str, str] | None = None
+                extra_sections: Optional[Dict[str, str]] = None
             ) -> None:
                 extras = {"Additional section": "With some details."}
                 if extra_sections is not None:
-                    extras |= extra_sections
+                    extras.update(extra_sections)
                 super().print_script_execution_summary(
                     extra_sections=extras
                 )
@@ -955,7 +955,7 @@ class StagedScript:
             ),
         }
         if extra_sections is not None:
-            sections |= extra_sections
+            sections.update(extra_sections)
         items = [""]
         for section, details in sections.items():
             items.extend([f"➤ {section}:", Padding(details, (1, 0, 1, 4))])
@@ -969,7 +969,7 @@ class StagedScript:
         command: str,
         *,
         pretty_print: bool = False,
-        print_command: bool | None = None,
+        print_command: Optional[bool] = None,
         **kwargs,
     ) -> CompletedProcess:
         """
@@ -1028,7 +1028,7 @@ class StagedScript:
         return table
 
     @staticmethod
-    def _current_arg_is_long_flag(args: list[str]) -> bool:
+    def _current_arg_is_long_flag(args: List[str]) -> bool:
         """
         Determine if the first argument in the list is a long flag.
 
@@ -1041,7 +1041,7 @@ class StagedScript:
         return len(args) > 0 and args[0].startswith("--")
 
     @staticmethod
-    def _next_arg_is_flag(args: list[str]) -> bool:
+    def _next_arg_is_flag(args: List[str]) -> bool:
         """
         Determine if the second argument in the list is a flag.
 
