@@ -41,43 +41,6 @@ from tenacity.wait import wait_fixed
 rich.traceback.install()
 
 
-class StageDuration(NamedTuple):
-    """
-    The duration of a stage.
-
-    Define a mapping from stage names to how long they took to run.  See
-    :attr:`StagedScript.durations` for details.
-    """
-
-    stage: str
-    duration: timedelta
-
-
-class RetryStage(TryAgain):
-    """
-    Trigger the retry of a stage.
-
-    Define an exception to be raised by subclass developers to indicate
-    that a stage should be retried.
-    """
-
-    pass
-
-
-class HelpFormatter(
-    ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter
-):
-    """
-    The help formatter for the argument parser.
-
-    Define a formatter class to be used by the argument parser that both
-    treats the description as raw text (doesn't do any automatic
-    formatting) and shows default values of arguments.
-    """
-
-    pass
-
-
 class StagedScript:
     """
     The base class for all staged scripts.
@@ -130,21 +93,25 @@ class StagedScript:
 
     Note that additional attributes are automatically generated for each
     ``stage`` registered for a subclass object:
-    * ``STAGE_NAME_retry_attempts`` (int):  The number of times to
-      attempt retrying the ``STAGE_NAME`` stage.
-    * ``STAGE_NAME_retry_attempts_arg`` (argparse.Action):  The
-      corresponding argument in the :class:`ArgumentParser`, so subclass
-      developers can modify it if needed.
-    * ``STAGE_NAME_retry_delay`` (float):  How long to wait (in seconds)
-      before attempting to retry the ``STAGE_NAME`` stage.
-    * ``STAGE_NAME_retry_delay_arg`` (argparse.Action):  The
-      corresponding argument in the :class:`ArgumentParser`, so subclass
-      developers can modify it if needed.
-    * ``STAGE_NAME_retry_timeout`` (int):  How long to wait (in seconds)
-      before giving up on retrying the ``STAGE_NAME`` stage.
-    * ``STAGE_NAME_retry_timeout_arg`` (argparse.Action):  The
-      corresponding argument in the :class:`ArgumentParser`, so subclass
-      developers can modify it if needed.
+
+    ``STAGE_NAME_retry_attempts`` (int)
+        The number of times to attempt retrying the ``STAGE_NAME``
+        stage.
+    ``STAGE_NAME_retry_attempts_arg`` (argparse.Action)
+        The corresponding argument in the :class:`ArgumentParser`, so
+        subclass developers can modify it if needed.
+    ``STAGE_NAME_retry_delay`` (float)
+        How long to wait (in seconds) before attempting to retry the
+        ``STAGE_NAME`` stage.
+    ``STAGE_NAME_retry_delay_arg`` (argparse.Action)
+        The corresponding argument in the :class:`ArgumentParser`, so
+        subclass developers can modify it if needed.
+    ``STAGE_NAME_retry_timeout`` (int)
+        How long to wait (in seconds) before giving up on retrying the
+        ``STAGE_NAME`` stage.
+    ``STAGE_NAME_retry_timeout_arg`` (argparse.Action)
+        The corresponding argument in the :class:`ArgumentParser`, so
+        subclass developers can modify it if needed.
     """
 
     def __init__(
@@ -218,180 +185,6 @@ class StagedScript:
                 "letters."
             )
             raise ValueError(message)
-
-    #
-    # Parse the command line arguments.
-    #
-
-    @functools.cached_property
-    def parser(self) -> ArgumentParser:
-        """
-        The base argument parser.
-
-        Create an :class:`ArgumentParser` for all the arguments made
-        available by this base class.  This should be overridden in
-        subclasses as follows:
-
-        .. code-block:: python
-
-            @functools.cached_property
-            def parser(self) -> ArgumentParser:
-                ap = super().parser
-                ap.description = '''INSERT DESCRIPTION HERE'''
-                ap.add_argument("--foo", ...)
-                ...
-                # Optional changes.
-                ap.formatter_class = RawDescriptionHelpFormatter
-                ap.set_defaults(stage=self.stages)
-                return ap
-
-        The formatter class defaults to a combination of
-        :class:`ArgumentDefaultsHelpFormatter` and
-        :class:`RawDescriptionHelpFormatter`, but can optionally be set
-        to whatever you like.
-
-        If you'd like to set the default value for the ``--stage``
-        argument, you can use :func:`set_defaults` (the example above
-        defaults to all the stages registered when the subclass was
-        instantiated.
-
-        Similarly, if you wish to override the default values for the
-        retry arguments that are automatically provided for every stage,
-        you can do so with, e.g.:
-
-        .. code-block:: python
-
-            ap.set_defaults(
-                foo_retry_attempts=5,
-                foo_retry_delay=10,
-                foo_retry_timeout=600
-            )
-
-        If you wish to suppress the stage retry arguments for your
-        stages that don't raise a :class:`RetryStage` exception, you can
-        do so with, e.g.:
-
-        .. code-block:: python
-
-            self.foo_retry_attempts_arg.help = argparse.SUPPRESS
-            self.foo_retry_delay_arg.help = argparse.SUPPRESS
-            self.foo_retry_timeout_arg.help = argparse.SUPPRESS
-
-        And if you want to remove the title for the retry group
-        altogether, you can do so with:
-
-        .. code-block:: python
-
-            self.retry_arg_group.title = argparse.SUPPRESS
-
-        Returns:
-            The base argument parser.
-        """
-        description = (
-            "This is the description of the ArgumentParser in the "
-            "StagedScript base class.  This should be overridden in your "
-            "subclass.  See the docstring for details."
-        )
-        ap = ArgumentParser(
-            description=description, formatter_class=HelpFormatter
-        )
-        ap.add_argument(
-            "--stage",
-            choices=self.stages,
-            nargs="+",
-            help="Which stages to run.",
-        )
-        ap.add_argument(
-            "--dry-run",
-            action="store_true",
-            help="If specified, don't actually run the commands in the shell; "
-            "instead print the commands that would have been executed.",
-        )
-        if self.stages:
-            self.retry_arg_group = ap.add_argument_group(
-                "retry", "Additional options for retrying stages."
-            )
-            for stage in self.stages:
-                retry_attempts = self.retry_arg_group.add_argument(
-                    f"--{stage}-retry-attempts",
-                    default=0,
-                    type=int,
-                    help=f"How many times to retry the {stage!r} stage.",
-                )
-                setattr(self, f"{stage}_retry_attempts_arg", retry_attempts)
-                retry_delay = self.retry_arg_group.add_argument(
-                    f"--{stage}-retry-delay",
-                    default=0,
-                    type=float,
-                    help="How long to wait (in seconds) before retrying the "
-                    f"{stage!r} stage.",
-                )
-                setattr(self, f"{stage}_retry_delay_arg", retry_delay)
-                retry_timeout = self.retry_arg_group.add_argument(
-                    f"--{stage}-retry-timeout",
-                    default=60,
-                    type=int,
-                    help="How long to wait (in seconds) before giving up on "
-                    f"retrying the {stage!r} stage.",
-                )
-                setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
-        return ap
-
-    def parse_args(self, argv: List[str]) -> None:
-        """
-        Parse the command line arguments.
-
-        Parse the command line arguments supplied by this base class.
-        The recommendation is to save any arguments, perhaps with some
-        transformations, as attributes of your subclass for ease of
-        access throughout your subclass.  This should be overridden in
-        subclasses as follows:
-
-        .. code-block:: python
-
-            def parse_args(self, argv: List[str]) -> None:
-                super().parse_args(argv)
-                # Parse additional arguments and store as attributes.
-                self.foo = self.args.foo
-                ...
-                # Ensure supplied arguments are valid, etc.
-                ...
-
-        Args:
-            argv:  The command line arguments used when running this
-                file as a script.
-        """
-        self.args = self.parser.parse_args(argv)
-        self.dry_run = self.args.dry_run
-        self.stages_to_run = (
-            set(self.args.stage) if self.args.stage is not None else set()
-        )
-        for stage in self.stages:
-            for retry_arg in [
-                f"{stage}_retry_attempts",
-                f"{stage}_retry_delay",
-                f"{stage}_retry_timeout",
-            ]:
-                setattr(self, retry_arg, getattr(self.args, retry_arg, None))
-
-    def raise_parser_error(self, message):
-        """
-        Raise a parser error.
-
-        Exit the script with a message indicating what went wrong when
-        parsing the command line arguments.  To be used by subclass
-        developers in the midst of :func:`parse_args`.
-
-        Args:
-            message:  What went wrong.
-
-        Raises:
-            SystemExit:  To indicate the problem and stop script
-                execution.
-        """
-        self.parser.print_help()
-        self.console.print(f"[yellow]\n{message}")
-        raise SystemExit(1)
 
     #
     # The `stage` decorator.
@@ -591,7 +384,7 @@ class StagedScript:
                 # Insert more actions here.
 
         Alternatively you can override the default behavior entirely by
-        omitting the `super()` line above.
+        omitting the ``super()`` line above.
 
         In addition, you may wish to customize the **Begin-Stage
         Actions** for a particular stage, in which case you define a
@@ -629,7 +422,7 @@ class StagedScript:
                 # Insert more actions here.
 
         Alternatively you can override the default behavior entirely by
-        omitting the `super()` line above.
+        omitting the ``super()`` line above.
 
         In addition, you may wish to customize the **Skip-Stage
         Actions** for a particular stage, in which case you define a
@@ -660,7 +453,7 @@ class StagedScript:
                 # Insert more actions here.
 
         Alternatively you can override the default behavior entirely by
-        omitting the `super()` line above.
+        omitting the ``super()`` line above.
 
         In addition, you may wish to customize the **End-Stage Actions**
         for a particular stage, in which case you define an
@@ -725,7 +518,7 @@ class StagedScript:
                 # Insert more actions here.
 
         Alternatively you can override the default behavior entirely by
-        omitting the `super()` line above.
+        omitting the ``super()`` line above.
 
         In addition, you may wish to customize the **Prepare-to-Retry
         Actions** for an individual stage by defining a
@@ -760,7 +553,7 @@ class StagedScript:
         Handle a stage retry error.
 
         When a stage has exhausted the specified retry conditions,
-        handle the thrown :class:`RetryError` appropriately.
+        handle the thrown :class:`RetryStage` appropriately.
 
         If subclass developers wish to extend the **Retry Error
         Handler**, they can do so with the following:
@@ -775,7 +568,7 @@ class StagedScript:
                 # Insert more actions here.
 
         Alternatively you can override the default behavior entirely by
-        omitting the `super()` line above.
+        omitting the ``super()`` line above.
 
         In addition, you may wish to customize the **Retry Error
         Handler** for an individual stage by defining a
@@ -814,8 +607,225 @@ class StagedScript:
             )
 
     #
-    # Additional methods to be used or overridden in subclasses.
+    # Parse the command line arguments.
     #
+
+    @functools.cached_property
+    def parser(self) -> ArgumentParser:
+        """
+        The base argument parser.
+
+        Create an :class:`ArgumentParser` for all the arguments made
+        available by this base class.  This should be overridden in
+        subclasses as follows:
+
+        .. code-block:: python
+
+            @functools.cached_property
+            def parser(self) -> ArgumentParser:
+                my_parser = super().parser
+                my_parser.description = "INSERT DESCRIPTION HERE"
+                my_parser.add_argument("--foo", ...)
+                ...
+                # Optional changes.
+                my_parser.formatter_class = RawDescriptionHelpFormatter
+                my_parser.set_defaults(stage=list(self.stages))
+                return my_parser
+
+        The formatter class defaults to a combination of
+        :class:`ArgumentDefaultsHelpFormatter` and
+        :class:`RawDescriptionHelpFormatter`, but can optionally be set
+        to whatever you like.
+
+        If you'd like to set the default value for the ``--stage``
+        argument, you can use :func:`set_defaults` (the example above
+        defaults to all the stages registered when the subclass was
+        instantiated.
+
+        Similarly, if you wish to override the default values for the
+        retry arguments that are automatically provided for every stage,
+        you can do so with, e.g.:
+
+        .. code-block:: python
+
+            my_parser.set_defaults(
+                foo_retry_attempts=5,
+                foo_retry_delay=10,
+                foo_retry_timeout=600
+            )
+
+        If you wish to suppress the stage retry arguments for your
+        stages that don't raise a :class:`RetryStage` exception, you can
+        do so with, e.g.:
+
+        .. code-block:: python
+
+            self.foo_retry_attempts_arg.help = argparse.SUPPRESS
+            self.foo_retry_delay_arg.help = argparse.SUPPRESS
+            self.foo_retry_timeout_arg.help = argparse.SUPPRESS
+
+        And if you want to remove the title for the retry group
+        altogether, you can do so with:
+
+        .. code-block:: python
+
+            self.retry_arg_group.title = argparse.SUPPRESS
+            self.retry_arg_group.description = argparse.SUPPRESS
+
+        Returns:
+            The base argument parser.
+        """
+        description = (
+            "This is the description of the ArgumentParser in the "
+            "StagedScript base class.  This should be overridden in your "
+            "subclass.  See the docstring for details."
+        )
+        my_parser = ArgumentParser(
+            description=description, formatter_class=HelpFormatter
+        )
+        my_parser.add_argument(
+            "--stage",
+            choices=self.stages,
+            nargs="+",
+            help="Which stages to run.",
+        )
+        my_parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="If specified, don't actually run the commands in the shell; "
+            "instead print the commands that would have been executed.",
+        )
+        if self.stages:
+            self.retry_arg_group = my_parser.add_argument_group(
+                "retry", "Additional options for retrying stages."
+            )
+            for stage in self.stages:
+                retry_attempts = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-attempts",
+                    default=0,
+                    type=int,
+                    help=f"How many times to retry the {stage!r} stage.",
+                )
+                setattr(self, f"{stage}_retry_attempts_arg", retry_attempts)
+                retry_delay = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-delay",
+                    default=0,
+                    type=float,
+                    help="How long to wait (in seconds) before retrying the "
+                    f"{stage!r} stage.",
+                )
+                setattr(self, f"{stage}_retry_delay_arg", retry_delay)
+                retry_timeout = self.retry_arg_group.add_argument(
+                    f"--{stage}-retry-timeout",
+                    default=60,
+                    type=int,
+                    help="How long to wait (in seconds) before giving up on "
+                    f"retrying the {stage!r} stage.",
+                )
+                setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
+        return my_parser
+
+    def parse_args(self, argv: List[str]) -> None:
+        """
+        Parse the command line arguments.
+
+        Parse the command line arguments supplied by this base class.
+        The recommendation is to save any arguments, perhaps with some
+        transformations, as attributes of your subclass for ease of
+        access throughout your subclass.  This should be overridden in
+        subclasses as follows:
+
+        .. code-block:: python
+
+            def parse_args(self, argv: List[str]) -> None:
+                super().parse_args(argv)
+                # Parse additional arguments and store as attributes.
+                self.foo = self.args.foo
+                ...
+                # Ensure supplied arguments are valid, etc.
+                ...
+
+        Args:
+            argv:  The command line arguments used when running this
+                file as a script.
+        """
+        self.args = self.parser.parse_args(argv)
+        self.dry_run = self.args.dry_run
+        self.stages_to_run = (
+            set(self.args.stage) if self.args.stage is not None else set()
+        )
+        for stage in self.stages:
+            for retry_arg in [
+                f"{stage}_retry_attempts",
+                f"{stage}_retry_delay",
+                f"{stage}_retry_timeout",
+            ]:
+                setattr(self, retry_arg, getattr(self.args, retry_arg, None))
+
+    def raise_parser_error(self, message):
+        """
+        Raise a parser error.
+
+        Exit the script with a message indicating what went wrong when
+        parsing the command line arguments.  To be used by subclass
+        developers in the midst of :func:`parse_args`.
+
+        Args:
+            message:  What went wrong.
+
+        Raises:
+            SystemExit:  To indicate the problem and stop script
+                execution.
+        """
+        self.parser.print_help()
+        self.console.print(f"[yellow]\n{message}")
+        raise SystemExit(1)
+
+    #
+    # Running commands.
+    #
+
+    def run(
+        self,
+        command: str,
+        *,
+        pretty_print: bool = False,
+        print_command: Optional[bool] = None,
+        **kwargs,
+    ) -> CompletedProcess:
+        """
+        Run a command in the underlying shell.
+
+        Args:
+            command:  The command to be executed.
+            pretty_print:  Whether the command should be
+                "pretty-printed" when storing it in the list of commands
+                executed.
+            print_command:  Whether to print the command executed
+                immediately before executing it.  If specified, this
+                overrides the :attr:`print_commands` specified when
+                instantiating the class.
+            kwargs:  Additional keyword arguments to pass on to
+                :func:`subprocess.run`.
+
+        Returns:
+            The result from calling :func:`subprocess.run`.
+        """
+        if self.dry_run:
+            self.print_dry_run_message(
+                f"The command executed would be:  {command}"
+            )
+            return CompletedProcess(
+                args=f"echo {command}", returncode=0, stdout=command
+            )
+        self.commands_executed.append(
+            self.pretty_print_command(command) if pretty_print else command
+        )
+        if print_command is True or (
+            print_command is None and self.print_commands is True
+        ):
+            self.console.log(f"Executing:  {command}")
+        return subprocess.run(command, check=False, **kwargs)  # noqa: S603
 
     def pretty_print_command(self, command: str, indent: int = 4) -> str:
         """
@@ -853,36 +863,9 @@ class StagedScript:
                 )
         return (" \\\n" + " " * indent).join(lines)
 
-    def print_dry_run_message(self, message: str, *, indent: int = 0) -> None:
-        """
-        Print a dry-run message.
-
-        Print a message indicating that something is happening due to
-        the script running in dry-run mode.
-
-        Args:
-            message:  The message to print.
-            indent:  How many spaces by which to indent that which is
-                printed.
-        """
-        self.console.log(
-            Padding(
-                Panel(f"DRY-RUN MODE:  {message}", style="yellow"),
-                (0, 0, 0, indent),
-            )
-        )
-
-    def print_heading(self, message: str, *, color: str = "cyan") -> None:
-        """
-        Print a heading.
-
-        To indicate at a high level what the script is doing.
-
-        Args:
-            message:  The message to print.
-            color:  What color to print the message in.
-        """
-        self.console.log(Panel(f"[bold]{message}", style=color))
+    #
+    # Script execution summary.
+    #
 
     def print_script_execution_summary(
         self, extra_sections: Optional[Dict[str, str]] = None
@@ -937,47 +920,40 @@ class StagedScript:
         self.console.log(Group(*items))
         self.console.rule(f"End {title}")
 
-    def run(
-        self,
-        command: str,
-        *,
-        pretty_print: bool = False,
-        print_command: Optional[bool] = None,
-        **kwargs,
-    ) -> CompletedProcess:
+    #
+    # Additional methods to be used or overridden in subclasses.
+    #
+
+    def print_heading(self, message: str, *, color: str = "cyan") -> None:
         """
-        Run a command in the underlying shell.
+        Print a heading.
+
+        To indicate at a high level what the script is doing.
 
         Args:
-            command:  The command to be executed.
-            pretty_print:  Whether the command should be
-                "pretty-printed" when storing it in the list of commands
-                executed.
-            print_command:  Whether to print the command executed
-                immediately before executing it.  If specified, this
-                overrides the :attr:`print_commands` specified when
-                instantiating the class.
-            kwargs:  Additional keyword arguments to pass on to
-                :func:`subprocess.run`.
-
-        Returns:
-            The result from calling :func:`subprocess.run`.
+            message:  The message to print.
+            color:  What color to print the message in.
         """
-        if self.dry_run:
-            self.print_dry_run_message(
-                f"The command executed would be:  {command}"
+        self.console.log(Panel(f"[bold]{message}", style=color))
+
+    def print_dry_run_message(self, message: str, *, indent: int = 0) -> None:
+        """
+        Print a dry-run message.
+
+        Print a message indicating that something is happening due to
+        the script running in dry-run mode.
+
+        Args:
+            message:  The message to print.
+            indent:  How many spaces by which to indent that which is
+                printed.
+        """
+        self.console.log(
+            Padding(
+                Panel(f"DRY-RUN MODE:  {message}", style="yellow"),
+                (0, 0, 0, indent),
             )
-            return CompletedProcess(
-                args=f"echo {command}", returncode=0, stdout=command
-            )
-        self.commands_executed.append(
-            self.pretty_print_command(command) if pretty_print else command
         )
-        if print_command is True or (
-            print_command is None and self.print_commands is True
-        ):
-            self.console.log(f"Executing:  {command}")
-        return subprocess.run(command, check=False, **kwargs)  # noqa: S603
 
     #
     # Internal helper methods.
@@ -1025,3 +1001,40 @@ class StagedScript:
             ``True`` if the second argument starts with ``-``.
         """
         return len(args) > 1 and args[1].startswith("-")
+
+
+class StageDuration(NamedTuple):
+    """
+    The duration of a stage.
+
+    Define a mapping from stage names to how long they took to run.  See
+    ``StagedScript.durations`` for details.
+    """
+
+    stage: str
+    duration: timedelta
+
+
+class RetryStage(TryAgain):
+    """
+    Trigger the retry of a stage.
+
+    Define an exception to be raised by subclass developers to indicate
+    that a stage should be retried.
+    """
+
+    pass
+
+
+class HelpFormatter(
+    ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter
+):
+    """
+    The help formatter for the argument parser.
+
+    Define a formatter class to be used by the argument parser that both
+    treats the description as raw text (doesn't do any automatic
+    formatting) and shows default values of arguments.
+    """
+
+    pass

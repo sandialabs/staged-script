@@ -31,6 +31,7 @@ extensions = [
     "sphinx_autodoc_typehints",
     "sphinx_copybutton",
     "sphinx_rtd_theme",
+    "sphinxcontrib.mermaid",
     "sphinxcontrib.programoutput",
 ]
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}

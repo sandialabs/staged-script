@@ -48,12 +48,12 @@ Before you begin hacking on `staged-script`, you'll need to do a few things:
    ```
 3. **Run the Examples:**  Ensure you can run all the examples with
    ```bash
-   cd /path/to/reverse_argparse/example
+   cd /path/to/staged-script/example
    ./run-all.bash
    ```
 4. **Build the Documentation:**  Ensure you can build the documentation with
    ```bash
-   cd /path/to/reverse_argparse/doc
+   cd /path/to/staged-script/doc
    ./make-html.bash
    ```
 

@@ -47,7 +47,11 @@ python3 -m pip install staged-script
 
 Once installed, you can simply
 ```python
+import sys
+from typing import List
+
 from staged_script import StagedScript
+
 
 class MyScript(StagedScript):
 
@@ -59,13 +63,14 @@ class MyScript(StagedScript):
     def say_goodbye(self) -> None:
         self.run("echo 'Goodbye World'", shell=True)
 
-    def main(self, argv: list[str]) -> None:
+    def main(self, argv: List[str]) -> None:
         self.parse_args(argv)
         try:
             self.say_hello()
             self.say_goodbye()
         finally:
             self.print_script_execution_summary()
+
 
 if __name__ == "__main__":
     my_script = MyScript({"hello", "goodbye"})
@@ -102,6 +107,10 @@ See [LICENSE.md](LICENSE.md).
 ## Credits
 
 Special thanks to [the GMS project][gms] for investing in the development of
-this package.
+this package.  Aspects of this functionality were inspired by the
+[SPiFI][spifi] Jenkins Pipeline plugin and the [ShellLogger][shelllogger]
+Python package.
 
 [gms]: https://github.com/SNL-GMS/GMS-PI25
+[spifi]: https://github.com/sandialabs/SPiFI
+[shelllogger]: https://github.com/sandialabs/shell-logger
