@@ -156,7 +156,7 @@ arguments to handle these new options.  You can do so by extending the
 
    Here's we're taking the file the user gives us on the command line
    and resolving it to an absolute path.  This is again in service of
-   improving replicability, as the script output with then point us
+   improving replicability, as the script output will then point us
    directly to the exact file used at execution time, instead of just
    giving us a file name or relative path.
 
