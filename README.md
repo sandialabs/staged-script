@@ -1,7 +1,3 @@
-> **WARNING:**  *This package is still in the process of being open sourced.
-> Until that work is done and this banner is removed, don't expect anything
-> documented here to be accurate.*
-
 ![Lines of code](https://sloc.xyz/github/sandialabs/staged-script/?category=code)
 [![codecov](https://codecov.io/gh/sandialabs/staged-script/branch/master/graph/badge.svg?token=FmDStZ6FVR)](https://codecov.io/gh/sandialabs/staged-script)
 [![CodeFactor](https://www.codefactor.io/repository/github/sandialabs/staged-script/badge/master)](https://www.codefactor.io/repository/github/sandialabs/staged-script/overview/master)
