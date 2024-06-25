@@ -6,3 +6,4 @@ sphinx-copybutton
 sphinx-rtd-theme
 sphinxcontrib-mermaid
 sphinxcontrib-programoutput
+sphinxcontrib-spelling
