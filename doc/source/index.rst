@@ -1,15 +1,3 @@
-staged-script
-=============
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-   :caption: Contents
-
-   motivation
-   examples
-   reference
-
 |Code lines|
 |codecov|
 |CodeFactor|
@@ -70,7 +58,29 @@ staged-script
 .. |Ruff| image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
    :target: https://github.com/astral-sh/ruff
 
-INSERT INTRODUCTION HERE.
+staged-script
+=============
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: Contents
+
+   motivation
+   features
+   examples
+   reference
+
+Python is an ideal language for certain types of infrastructure
+automation.  Automating what a user does manually often involves walking
+through a series of stages.  A user may wish to run all the stages in
+series, or perhaps only a subset, and depending on how things go,
+certain stages may need to be retried.  Once the script finishes
+running, it'd be ideal if it could tell the user exactly what was run,
+for the sake of easing replicability.  ``staged-script`` aims to ease
+the development such automation scripts.  It's easy to get started with,
+but also provides significant power-user functionality for those who
+need it.
 
 Installation
 ------------
@@ -86,25 +96,29 @@ Usage
 
 Once the package is installed, you can simply
 
-.. code-block:: python
-
-   from staged_script import StagedScript
-
-   class MyScript(StagedScript):
-      @StagedScript.stage("greet")
-      def say_hello(self) -> None:
-         print("Hello world")
-
-   # COMPLETE THIS EXAMPLE.
+.. literalinclude:: ../../example/ex_0_the_basics.py
+   :language: python
+   :linenos:
+   :lines: 9-
+   :caption: ``example/ex_0_the_basics.py``
 
 For more detailed usage information, see the :doc:`examples` page.  For
-implementation details, see the :doc:`reference documentation <reference>`.
+implementation details, see the :doc:`reference` documentation.
 
 Contributing
 ------------
 
-The source repository for this module is `on GitHub`_.  See the project's
-README and contributing guidelines for details on how to interact with the
-project.
+The source repository for this module is `on GitHub`_.  See the
+project's README and contributing guidelines for details on how to
+interact with the project.
 
 .. _on GitHub:  https://github.com/sandialabs/staged-script
+
+Inspiration
+-----------
+
+Aspects of this functionality were inspired by the `SPiFI`_ Jenkins
+Pipeline plugin and the `shell-logger`_ Python package.
+
+.. _SPiFI:  https://github.com/sandialabs/SPiFI
+.. _shell-logger:  https://github.com/sandialabs/shell-logger
