@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """A staged script with additional arguments."""
 
 # © 2024 National Technology & Engineering Solutions of Sandia, LLC
