@@ -23,3 +23,4 @@ python:
       path: .
     - requirements: requirements.txt
     - requirements: doc/requirements.txt
+    - requirements: example/requirements.txt

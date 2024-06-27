@@ -1,0 +1,1 @@
+# Requirements for running the `staged-script` examples.
