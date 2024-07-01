@@ -1,10 +1,5 @@
 # Contributing to `staged-script`
 
-> **Usage Guidelines:**
->
-> * Review all the text and add/remove/adjust things as needed.
-> * Delete this note.
-
 Thanks so much for your willingness to help out with `staged-script`'s
 development :grinning:  Here's everything you need to know.
 
@@ -77,6 +72,7 @@ The checks we perform are the following:
 * Use [ruff][ruff] to lint and format the code and docstrings.
 * Use [mypy][mypy] to run static type checking on our type-hinted code.
 * Ensure no large files are added to the repository.
+* Ensure files parse as valid Python.
 * Check for files that would conflict in case-sensitive filesystems.
 * Ensure files don't contain merge conflict strings.
 * Ensure files end with a single blank line.
@@ -87,8 +83,6 @@ The checks we perform are the following:
 * Use [doc8][doc8] to enforce our style for our documentation.
 * Use [pyroma][pyroma] to ensure our package complies with the best practices
   of the Python packaging ecosystem.
-* INSERT OTHERS
-* AS NEEDED
 
 [ruff]: https://docs.astral.sh/ruff/
 [mypy]: https://github.com/python/mypy
@@ -142,12 +136,12 @@ search for and install them.  These are the ones we recommend:
   [GitKraken][kraken] into VS Code.
 * **IntelliCode:**  AI-assisted development features.
 * **Pre-Commit:**  Commands and helpers for executing pre-commit hooks.
+* **Test Adapter Converter:**  Converts from the Test Explorer UI (below) API
+  to native VS Code testing.
 * **Test Explorer UI:**  Extensible user interface for running your tests in VS
   Code.
 * **Vim:**  For when you can't truly leave vi behind (and who would want to?).
 * **vscode-icons:**  Icons for the file explorer.
-* INSERT OTHERS
-* AS NEEDED
 
 [conventional]: https://www.conventionalcommits.org/en/v1.0.0/
 [kraken]: https://www.gitkraken.com/

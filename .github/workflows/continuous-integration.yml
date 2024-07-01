@@ -40,12 +40,26 @@ jobs:
         run: python3 -m pip install .
 
       - name: Test with pytest
-        run: python3 -m pytest --cov=staged_script test/
+        run: python3 -m pytest --cov=staged_script example/ test/
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Check documentation spelling
+        run: make spelling
+        working-directory: ./doc
+
+      - name: Check documentation coverage
+        run: make coverage
+        working-directory: ./doc
+
+      - name: Archive documentation coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs-coverage-report
+          path: doc/build/coverage/python.txt
 
       - name: Test uninstall
         run: python3 -m pip uninstall -y reverse_argparse

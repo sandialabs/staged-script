@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """A very basic staged script."""
 
 # © 2024 National Technology & Engineering Solutions of Sandia, LLC
