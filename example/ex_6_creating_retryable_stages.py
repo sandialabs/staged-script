@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """A staged script with a retryable stage."""
 
 # © 2024 National Technology & Engineering Solutions of Sandia, LLC

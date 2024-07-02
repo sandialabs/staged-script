@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """A staged script that runs certain stages by default."""
 
 # © 2024 National Technology & Engineering Solutions of Sandia, LLC
