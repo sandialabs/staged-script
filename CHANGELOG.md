@@ -2,6 +2,11 @@
 
 
 
+## v1.0.2 (2024-07-02)
+
+### Fix
+* fix: Specify Poetry dependencies ([`d3e3b5c`](https://github.com/sandialabs/staged-script/commit/d3e3b5cfee191a2694793b9c06355ba441a839c5))
+
 ## v1.0.1 (2024-07-02)
 
 ### Chore
