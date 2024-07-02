@@ -61,6 +61,9 @@ Issues = "https://github.com/sandialabs/staged-script/issues"
 
 [tool.poetry.dependencies]
 python = ">=3.8"
+reverse-argparse = "*"
+rich = "*"
+tenacity = "*"
 
 
 [tool.ruff]
