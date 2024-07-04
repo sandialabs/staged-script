@@ -55,7 +55,6 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-
       - name: Check documentation spelling
         run: make spelling
         working-directory: ./doc
