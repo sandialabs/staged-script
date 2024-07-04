@@ -1,4 +1,4 @@
-# 3-Clause BSD License
+# BSD-3-Clause License
 
 _Copyright © 2024, National Technology & Engineering Solutions of
 Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
