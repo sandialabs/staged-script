@@ -41,7 +41,7 @@ class MyBasicScript(StagedScript):
         print("Got past error.")
 
 
-@pytest.fixture()
+@pytest.fixture
 def script() -> MyBasicScript:
     """Create a :class:`MyBasicScript` object to be used by tests."""
     my_basic_script = MyBasicScript({"good", "bad"})
