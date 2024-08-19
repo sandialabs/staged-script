@@ -18,7 +18,7 @@ from rich.console import Console
 from staged_script import StagedScript, StageDuration
 
 
-@pytest.fixture()
+@pytest.fixture
 def script() -> StagedScript:
     """Create a :class:`StagedScript` object to be used by tests."""
     staged_script = StagedScript(set())

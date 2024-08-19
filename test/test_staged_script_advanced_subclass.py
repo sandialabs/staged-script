@@ -62,7 +62,7 @@ class MyAdvancedScript(StagedScript):
         print("inside '_prepare_to_retry_stage' function")
 
 
-@pytest.fixture()
+@pytest.fixture
 def script() -> MyAdvancedScript:
     """Create a :class:`MyAdvancedScript` object to be used by tests."""
     my_advanced_script = MyAdvancedScript({"test"})
