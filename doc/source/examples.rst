@@ -365,3 +365,315 @@ about the machine the script was run on.  Now when we run just the first
 stage, we see:
 
 .. command-output:: python3 ../../example/ex_7_customizing_the_summary.py --some-file foo.txt --stage hello
+
+
+
+Real-World Example:  System-Level Testing of a Kubernetes Application
+---------------------------------------------------------------------
+
+The `Geophysical Monitoring System`_ (GMS) is a suite of applications
+that deploys via `Kubernetes`_.  The scripting to automatically run its
+`system-level testing`_ on a cluster, as the applications would run in
+production, was built up via a hierarchy of ``StagedScript`` subclasses:
+
+.. _Geophysical Monitoring System:  https://github.com/SNL-GMS/GMS-PI25
+.. _Kubernetes:  https://kubernetes.io/
+.. _system-level testing:  https://github.com/SNL-GMS/GMS-PI25/tree/main/python/utils/gms_system_test
+
+.. mermaid::
+
+   %%{init: {"theme": "neutral"}}%%
+   flowchart TD
+      GMSSystemTest -. uses .-> IANSimDeploy
+      GMSSystemTest -- includes a --> SimulatorMixin
+      GMSSystemTest == is a ==> GMSKubeWrapper
+      IANSimDeploy -- includes a --> SimulatorMixin
+      IANSimDeploy == is a ==> GMSKubeWrapper
+      SimulatorMixin -. uses .-> GMSKubeWrapper
+      SimulatorMixin -. uses .-> StagedScript
+      GMSKubeWrapper == is a ==> StagedScript
+
+.. note::
+
+   The links below use a prior version of the package.  Anywhere you see
+   ``driver_script`` or ``DriverScript``, understand that those are
+   essentially ``staged_script`` and ``StagedScript``.  There were a few
+   breaking changes made in the midst of open-sourcing, but that
+   shouldn't impact your ability to understand this example.
+
+* |GMSKubeWrapper|_:  Instances of GMS are deployed to a cluster with
+  the |gmskube|_ utility, which essentially just executes a series of
+  `Helm`_ commands under the hood.  ``GMSKubeWrapper`` is a
+  ``StagedScript`` that provides some stages for standard ``gmskube``
+  commands.  It's not really intended to be run as a script by itself,
+  though it could be; rather, it exists as a base class for more
+  substantial scripts to inherit from.
+* |SimulatorMixin|_:  To facilitate testing without live data, GMS
+  includes a simulator that can be applied to a running instance of the
+  system.  ``SimulatorMixin`` provides stages for interacting with the
+  simulator.
+* |IANSimDeploy|_:  One of the GMS applications is the Interactive
+  Analysis (IAN) view.  ``IANSimDeploy`` is a ``StagedScript`` that
+  allows both developers and CI services to deploy an instance of this
+  application, with the simulator included, consistently.  It can be run
+  as a script by itself, but also supplies some of its functionality to
+  ``GMSSystemTest``.  The other GMS applications don't require their own
+  specialized script for standing them up.
+* |GMSSystemTest|_:  GMS' automated testing framework allows the user to
+  stand up an instance of the system, run a series of tests against it,
+  and then tear down the instance.  ``GMSSystemTest`` is a
+  ``StagedScript`` that pulls everything together from all the other
+  classes to make this happen.  It's primarily intended to be run in CI,
+  though developers can run it locally as well to replicate exactly what
+  happens in CI.
+
+.. _GMSKubeWrapper:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py
+.. |GMSKubeWrapper| replace::  ``GMSKubeWrapper``
+.. _gmskube:  https://github.com/SNL-GMS/GMS-PI25/blob/main/doc/commands.md#gmskube
+.. |gmskube| replace::  ``gmskube``
+.. _Helm:  https://helm.sh/
+.. _SimulatorMixin:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/simulator_mixin/simulator_mixin/simulator_mixin.py
+.. |SimulatorMixin| replace::  ``SimulatorMixin``
+.. _IANSimDeploy:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/ian_sim_deploy/ian_sim_deploy/ian_sim_deploy.py
+.. |IANSimDeploy| replace::  ``IANSimDeploy``
+.. _GMSSystemTest:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py
+.. |GMSSystemTest| replace::  ``GMSSystemTest``
+
+The details of GMS and how it's deployed aren't important; rather, this
+example showcases the flexibility of the framework provided by
+``staged-script``.
+
+Adding Stages
+^^^^^^^^^^^^^
+
+The stages provided by the classes are the following:
+
+* ``GMSKubeWrapper``:
+
+  * `install`_:  Stand up an instance of one of the GMS applications on
+    a cluster.
+  * `wait`_:  Wait for all the pods to reach a ready state.
+  * `uninstall`_:  Tear down the instance.
+
+* ``SimulatorMixin``:
+
+  * `init`_:  Initialize the simulator.
+  * `start`_:  Start data flowing.
+  * `stop`_:  Stop the data flow.
+  * `clean`_:  Clean up the simulator and return it to the uninitialized
+    state.
+  * `status`_:  Get the current status of the simulator.
+
+* ``GMSSystemTest``:
+
+  * `sleep`_:  Wait for some amount of time.  (This is historically
+    present to overlook transient system instability.)
+  * `test`_:  Run a `test augmentation`_ against the system and collect
+    the results.
+
+.. _install:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L150
+.. _wait:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L168
+.. _uninstall:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L200
+.. _init:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/simulator_mixin/simulator_mixin/simulator_mixin.py#L51
+.. _start:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/simulator_mixin/simulator_mixin/simulator_mixin.py#L71
+.. _stop:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/simulator_mixin/simulator_mixin/simulator_mixin.py#L85
+.. _clean:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/simulator_mixin/simulator_mixin/simulator_mixin.py#L95
+.. _status:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/simulator_mixin/simulator_mixin/simulator_mixin.py#L110
+.. _sleep:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L327
+.. _test:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L349
+.. _test augmentation:  https://github.com/SNL-GMS/GMS-PI25/blob/main/deploy/augmentation/GMS_SUBCHART_README.md
+
+Customizing the Parser
+^^^^^^^^^^^^^^^^^^^^^^
+
+The argument parser for ``GMSSystemTest`` is built up, bit by bit, by
+the different classes.
+
+* |GMSKubeWrapper adds|_:
+
+  * ``--instance``:  The name of the GMS instance.
+  * ``--save-logs``, ``--no-save-logs``:  Whether to save container logs
+    before tearing everything down.
+  * ``--log-dir``:  The directory in which to save container logs.
+  * ``--tag``:  The container image tag to use.
+  * ``--wait-timeout``:  How long to wait for the pods to reach a ready
+    state.
+
+* |IANSimDeploy adds|_:
+
+  * ``--keycloak``, ``--no-keycloak``:  Whether to use KeyCloak
+    authentication.
+  * ``--node-env``:  Which Node environment to use (development or
+    production).
+  * ``--state-timeout``:  How long to wait for the simulator to
+    transition between states.
+  * A variety of options to pass on to the ``gmskube install`` command.
+  * A variety of options for starting the simulator.
+
+* |GMSSystemTest adds|_:
+
+  * ``--type``:  Which of the GMS applications to stand up.
+  * ``--sleep``:  How long to wait between the pods reaching the ready
+    state and starting the test.
+  * ``--test``:  Which test augmentation to apply to the system.
+  * ``--env``:  Environment variables to set in the test environment.
+  * ``--parallel``:  How many identical test augmentation pods to launch
+    in parallel.
+
+.. _GMSKubeWrapper adds:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L82
+.. |GMSKubeWrapper adds| replace::  ``GMSKubeWrapper`` adds
+.. _IANSimDeploy adds:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/ian_sim_deploy/ian_sim_deploy/ian_sim_deploy.py#L130
+.. |IANSimDeploy adds| replace::  ``IANSimDeploy`` adds
+.. _GMSSystemTest adds:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L158
+.. |GMSSystemTest adds| replace::  ``GMSSystemTest`` adds
+
+With all of these additions, if we run ``./gms_system_test.py --help``,
+we see:
+
+.. code-block::
+
+   usage: gms_system_test.py [-h] [--stage {init,start,sleep,install,wait,test,uninstall} [{init,start,sleep,install,wait,test,uninstall} ...]]
+                          [--dry-run] [--install-retry-attempts INSTALL_RETRY_ATTEMPTS] [--install-retry-delay INSTALL_RETRY_DELAY]
+                          [--install-retry-timeout INSTALL_RETRY_TIMEOUT] [--test-retry-attempts TEST_RETRY_ATTEMPTS]
+                          [--test-retry-delay TEST_RETRY_DELAY] [--test-retry-timeout TEST_RETRY_TIMEOUT] [--instance INSTANCE] [--log-dir LOG_DIR]
+                          [--save-logs | --no-save-logs] [--tag TAG] [--wait-timeout WAIT_TIMEOUT] [--type {ian,keycloak,sb,logging}] [--sleep SLEEP]
+                          [--test TEST] [--env ENV] [--parallel {1,2,3,4,5,6,7,8,9,10}] [--values VALUES]
+
+   This script:
+   * stands up a temporary instance of the GMS system,
+   * waits for all the pods to be up and running,
+   * sleeps a given amount of time to wait for the application to be ready,
+   * runs a test augmentation against it, and
+   * tears down the temporary instance after testing completes.
+
+   Test augmentations, which run in a pod on a Kubernetes cluster, copy their test results to a MinIO test reporting service so that they can be gathered back to the machine on which this script was executed.  Final reports will be gathered in a ``gms_system_test-reports-{timestamp}-{unique-str}`` directory under the current working directory.  Additionally a ``gms_system_test-container-logs-{timestamp}-{unique-str}`` directory will contain logs from all the containers run as part of the testing.
+
+   options:
+     -h, --help            show this help message and exit
+     --stage {init,start,sleep,install,wait,test,uninstall} [{init,start,sleep,install,wait,test,uninstall} ...]
+                           Which stages to run. (default: {'init', 'start', 'sleep', 'install', 'wait', 'test', 'uninstall'})
+     --dry-run             If specified, don't actually run the commands in the shell; instead print the commands that would have been executed.
+                           (default: False)
+     --instance INSTANCE   The name of the GMS instance. (default: None)
+     --log-dir LOG_DIR     The directory in which to save the container logs. Defaults to `gms_system_test-container-logs-<timestamp>-<unique-str>`.
+                           (default: None)
+     --save-logs, --no-save-logs
+                           Whether to save the container logs. (default: True)
+     --tag TAG             Tag name, which corresponds to the docker tag of the images. The value entered will automatically be transformed according to
+                           the definition of the gitlab `CI_COMMIT_REF_SLUG` variable definition (lowercase, shortened to 63 characters, and with
+                           everything except `0-9` and `a-z` replaced with `-`, no leading / trailing `-`). (default: None)
+     --wait-timeout WAIT_TIMEOUT
+                           How long to wait (in seconds) for all the pods in the instance to be ready. (default: 900)
+     --type {ian,keycloak,sb,logging}
+                           The type of instance. (default: None)
+     --sleep SLEEP         How long to wait between the pods reaching a 'Ready' state and starting the test. (default: 0)
+     --test TEST           The name of a test to run (see ``gmskube augment catalog --tag <reference>``). (default: None)
+     --env ENV             Set environment variables in the test environment. This argument can be specified multiple times to specify multiple values.
+                           Example: ``--env FOO=bar`` will set ``FOO=bar`` for the test. (default: None)
+     --parallel {1,2,3,4,5,6,7,8,9,10}
+                           How many identical test augmentation pods to launch in parallel. (default: 1)
+
+   retry:
+     Additional options for retrying stages.
+
+     --install-retry-attempts INSTALL_RETRY_ATTEMPTS
+                           How many times to retry the 'install' stage. (default: 2)
+     --install-retry-delay INSTALL_RETRY_DELAY
+                           How long to wait (in seconds) before retrying the 'install' stage. (default: 0)
+     --install-retry-timeout INSTALL_RETRY_TIMEOUT
+                           How long to wait (in seconds) before giving up on retrying the 'install' stage. (default: 600)
+     --test-retry-attempts TEST_RETRY_ATTEMPTS
+                           How many times to retry the 'test' stage. (default: 5)
+     --test-retry-delay TEST_RETRY_DELAY
+                           How long to wait (in seconds) before retrying the 'test' stage. (default: 0)
+     --test-retry-timeout TEST_RETRY_TIMEOUT
+                           How long to wait (in seconds) before giving up on retrying the 'test' stage. (default: 1200)
+
+   install:
+     Additional options to pass on to ``gmskube install``.
+
+     --values VALUES       Set override values in the chart using a YAML file. The chart `values.yaml` is always included first, existing values second
+                           (for upgrade), followed by any override file(s). This file should only include the specific values you want to override; it
+                           should not be the entire `values.yaml` from the chart. This flag can be used multiple times to specify multiple files. The
+                           priority will be given to the last (right-most) file specified. (default: None)
+
+   examples:
+     Here are some standard use cases.
+
+     Run the ``jest`` test against a ``sb`` instance deployed from the ``develop`` branch::
+
+         gms_system_test.py --type sb --tag develop --test jest
+
+     Verify that it's possible to install/uninstall ``ian``, but don't test anything::
+
+         gms_system_test.py --type ian --tag develop --stage install wait init start uninstall
+
+Customizing Stage Behavior
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The transitions between the stages are customized as follows:
+
+* ``GMSKubeWrapper``:
+
+  * There are some `general pre-stage actions`_ defined (ensure we have
+    an instance name, that the instance exists, and that we have a
+    ``KubeCtl`` object ready to talk to it) that may be used by any
+    number of stages defined here or in subclasses.
+  * If the install stage fails, `uninstall the instance before retrying
+    it`_.  If it still hasn't worked after the retries have been
+    exhausted, `record the script failure and skip all future stages`_.
+  * Before the wait stage, `run the general pre-stage actions`_.  If
+    skipping this stage, `assume all the pods are ready`_.  If the pods
+    aren't ready, `record the script failure`_.
+  * Before the uninstall stage, `run the general pre-stage actions, and
+    then save the container logs`_.
+
+* ``SimulatorMixin``:  For each stage defined, |run the general
+  pre-stage actions from GMSKubeWrapper|_.
+* ``IANSimDeploy``:  If the pods aren't ready after the wait stage,
+  `skip over all future stages`_.
+* ``GMSSystemTest``:
+
+  * Before the install stage, if an instance name wasn't supplied,
+    `create a unique one`_.
+  * If the pods aren't ready after the wait stage, `skip all future
+    stages`_.
+  * Before running the test stage, `ensure the instance tag is set, and
+    create the test reports directory`_.  After it completes, `set the
+    script success based on the test results`_.  If the tests fail,
+    before retrying the stage, `save the container logs and clean things
+    up`_.
+
+.. _general pre-stage actions:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L436
+.. _uninstall the instance before retrying it:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L409
+.. _record the script failure and skip all future stages:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L426
+.. _run the general pre-stage actions:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L458
+.. _assume all the pods are ready:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L465
+.. _record the script failure:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L473
+.. _run the general pre-stage actions, and then save the container logs:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L482
+.. _run the general pre-stage actions from GMSKubeWrapper:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/simulator_mixin/simulator_mixin/simulator_mixin.py#L345
+.. |run the general pre-stage actions from GMSKubeWrapper| replace::  run the general pre-stage actions from ``GMSKubeWrapper``
+.. _skip over all future stages:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/ian_sim_deploy/ian_sim_deploy/ian_sim_deploy.py#L400
+.. _create a unique one:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L679
+.. _skip all future stages:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L719
+.. _ensure the instance tag is set, and create the test reports directory:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L729
+.. _set the script success based on the test results:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L752
+.. _save the container logs and clean things up:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L760
+
+Customizing the Script Execution Summary
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each class in the hierarchy can add details to the script execution
+summary, to better communicate to users what was just run, and to ease
+debugging of any failures, either locally or in CI.
+
+* ``GMSKubeWrapper``:  `Adds the container logs directory and name of the
+  current Kubernetes cluster`_.
+* ``IANSimDeploy``:  `Adds the URL for the user interface`_, so users
+  can quickly pull it up in their browser.
+* ``GMSSystemTest``:  `Adds the test reports directory`_, so users can
+  quickly see how things went.
+
+.. _Adds the container logs directory and name of the current Kubernetes cluster:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/gmskube_wrapper/gmskube_wrapper/gmskube_wrapper.py#L215
+.. _Adds the URL for the user interface:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/ian_sim_deploy/ian_sim_deploy/ian_sim_deploy.py#L332
+.. _Adds the test reports directory:  https://github.com/SNL-GMS/GMS-PI25/blob/main/python/utils/gms_system_test/gms_system_test/gms_system_test.py#L419
