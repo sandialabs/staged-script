@@ -11,7 +11,6 @@ import shlex
 import pytest
 from rich.console import Console
 from tenacity import RetryCallState, Retrying, TryAgain
-from typing import Set
 
 from staged_script import StagedScript
 
@@ -104,7 +103,7 @@ def ensure_phase_comes_next(
 @pytest.mark.parametrize("custom_pre_stage", [True, False])
 @pytest.mark.parametrize("stages_to_run", [{"test"}, set()])
 def test_stage(  # noqa: PLR0913
-    stages_to_run: Set[str],
+    stages_to_run: set[str],
     custom_pre_stage: bool,  # noqa: FBT001
     custom_begin_stage: bool,  # noqa: FBT001
     custom_skip_stage: bool,  # noqa: FBT001

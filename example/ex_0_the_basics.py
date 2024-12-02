@@ -8,7 +8,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import sys
-from typing import List
 
 from staged_script import StagedScript
 
@@ -22,7 +21,7 @@ class MyScript(StagedScript):
     def say_goodbye(self) -> None:
         self.run("echo 'Goodbye World'", shell=True)
 
-    def main(self, argv: List[str]) -> None:
+    def main(self, argv: list[str]) -> None:
         self.parse_args(argv)
         try:
             self.say_hello()

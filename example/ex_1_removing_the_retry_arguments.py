@@ -11,7 +11,6 @@ import argparse
 import functools
 import sys
 from argparse import ArgumentParser
-from typing import List
 
 from staged_script import StagedScript
 
@@ -39,7 +38,7 @@ class MyScript(StagedScript):
         self.goodbye_retry_timeout_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
         return my_parser
 
-    def main(self, argv: List[str]) -> None:
+    def main(self, argv: list[str]) -> None:
         self.parse_args(argv)
         try:
             self.say_hello()
