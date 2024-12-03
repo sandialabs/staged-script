@@ -12,16 +12,16 @@ and functions.
 # SPDX-License-Identifier: BSD-3-Clause
 
 from .staged_script import (
-    StagedScript,
     HelpFormatter,
     RetryStage,
     StageDuration,
+    StagedScript,
 )
 
 __all__ = [
-    "StagedScript",
     "HelpFormatter",
     "RetryStage",
     "StageDuration",
+    "StagedScript",
 ]
 __version__ = "2.0.0"
