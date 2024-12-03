@@ -9,10 +9,9 @@
 
 import subprocess
 from pathlib import Path
-from typing import List
 
 
-def assert_output_in_order(stdout: str, output: List[str]) -> None:
+def assert_output_in_order(stdout: str, output: list[str]) -> None:
     """
     Ensure the output appears in the correct order.
 

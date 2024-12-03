@@ -20,7 +20,7 @@ simple stages to say "hello" and "goodbye".
    :language: python
    :linenos:
    :lines: 10-
-   :emphasize-lines: 9-10,13-14,19-20
+   :emphasize-lines: 8-9,12-13,18-19
    :caption: ``example/ex_0_the_basics.py``
 
 The two methods ``say_hello()`` and ``say_goodbye()`` are stand-ins for
@@ -73,7 +73,7 @@ by adding the following to the ``MyScript`` class:
 .. literalinclude:: ../../example/ex_1_removing_the_retry_arguments.py
    :language: python
    :linenos:
-   :lines: 28-40
+   :lines: 27-39
    :caption: ``example/ex_1_removing_the_retry_arguments.py``
 
 .. note::
@@ -109,7 +109,7 @@ that case, you can add the highlighted line:
 .. literalinclude:: ../../example/ex_2_running_certain_stages_by_default.py
    :language: python
    :linenos:
-   :lines: 28-30,42-43
+   :lines: 27-29,41-42
    :emphasize-lines: 4
    :caption: ``example/ex_2_running_certain_stages_by_default.py``
 
@@ -138,7 +138,7 @@ Now let's see about adding some arguments to the parser beyond what
 .. literalinclude:: ../../example/ex_3_adding_arguments.py
    :language: python
    :linenos:
-   :lines: 33-35,46-58
+   :lines: 32-34,45-57
    :emphasize-lines: 4-15
    :caption: ``example/ex_3_adding_arguments.py``
 
@@ -149,7 +149,7 @@ arguments to handle these new options.  You can do so by extending the
 .. literalinclude:: ../../example/ex_3_adding_arguments.py
    :language: python
    :linenos:
-   :lines: 60-71
+   :lines: 59-70
    :caption: ``example/ex_3_adding_arguments.py``
 
 .. note::
@@ -166,7 +166,7 @@ the two stages to take them into account.
 .. literalinclude:: ../../example/ex_3_adding_arguments.py
    :language: python
    :linenos:
-   :lines: 21-31
+   :lines: 20-30
    :emphasize-lines: 4,10
    :caption: ``example/ex_3_adding_arguments.py``
 
@@ -193,7 +193,7 @@ overridden in your subclasses.
 .. literalinclude:: ../../example/ex_4_customizing_stage_behavior.py
    :language: python
    :linenos:
-   :lines: 73-94
+   :lines: 72-93
    :caption: ``example/ex_4_customizing_stage_behavior.py``
 
 .. note::
@@ -243,7 +243,7 @@ is the name of the stage as provided to the :ref:`StagedScript.stage()
 .. literalinclude:: ../../example/ex_5_customizing_individual_stages.py
    :language: python
    :linenos:
-   :lines: 96-113
+   :lines: 95-112
    :caption: ``example/ex_5_customizing_individual_stages.py``
 
 Now when we run both stages we see:

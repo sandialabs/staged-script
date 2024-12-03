@@ -11,7 +11,6 @@ import argparse
 import functools
 import sys
 from argparse import ArgumentParser
-from typing import List
 
 from staged_script import StagedScript
 
@@ -42,7 +41,7 @@ class MyScript(StagedScript):
         my_parser.set_defaults(stage=list(self.stages))
         return my_parser
 
-    def main(self, argv: List[str]) -> None:
+    def main(self, argv: list[str]) -> None:
         self.parse_args(argv)
         try:
             self.say_hello()

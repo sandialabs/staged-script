@@ -14,7 +14,7 @@ import socket
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Optional
 
 from staged_script import RetryStage, StagedScript
 
@@ -22,7 +22,7 @@ from staged_script import RetryStage, StagedScript
 class MyScript(StagedScript):
     def __init__(
         self,
-        stages: Set[str],
+        stages: set[str],
         *,
         console_force_terminal: Optional[bool] = None,
         console_log_path: bool = True,
@@ -88,7 +88,7 @@ class MyScript(StagedScript):
         )
         return my_parser
 
-    def parse_args(self, argv: List[str]) -> None:
+    def parse_args(self, argv: list[str]) -> None:
         # The base class saves the parsed arguments as `self.args`.
         super().parse_args(argv)
 
@@ -145,7 +145,7 @@ class MyScript(StagedScript):
 
     def print_script_execution_summary(
         self,
-        extra_sections: Optional[Dict[str, str]] = None,
+        extra_sections: Optional[dict[str, str]] = None,
     ) -> None:
         extras = {
             "Machine details": (
@@ -154,10 +154,10 @@ class MyScript(StagedScript):
             ),
         }
         if extra_sections is not None:
-            extras.update(extra_sections)
+            extras |= extra_sections
         super().print_script_execution_summary(extra_sections=extras)
 
-    def main(self, argv: List[str]) -> None:
+    def main(self, argv: list[str]) -> None:
         self.parse_args(argv)
         try:
             self.say_hello()

@@ -12,7 +12,6 @@ import functools
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import List
 
 from staged_script import StagedScript
 
@@ -57,7 +56,7 @@ class MyScript(StagedScript):
         )
         return my_parser
 
-    def parse_args(self, argv: List[str]) -> None:
+    def parse_args(self, argv: list[str]) -> None:
         # The base class saves the parsed arguments as `self.args`.
         super().parse_args(argv)
 
@@ -93,7 +92,7 @@ class MyScript(StagedScript):
             "Checking to make sure all is well after running the stage..."
         )
 
-    def main(self, argv: List[str]) -> None:
+    def main(self, argv: list[str]) -> None:
         self.parse_args(argv)
         try:
             self.say_hello()
