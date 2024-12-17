@@ -2,6 +2,86 @@
 
 
 
+## v2.0.1 (2024-12-17)
+
+### Chores
+* chore(deps): Bump the github-actions-dependencies group with 2 updates ([`87d42a8`](https://github.com/sandialabs/staged-script/commit/87d42a8c38546ac3be8b3240b81c5ac4f867d6f8))
+
+  Bumps the github-actions-dependencies group with 2 updates: [github/codeql-action](https://github.com/github/codeql-action) and [python-semantic-release/python-semantic-release](https://github.com/python-semantic-release/python-semantic-release).
+
+
+  Updates `github/codeql-action` from 3.27.6 to 3.27.9
+  - [Release notes](https://github.com/github/codeql-action/releases)
+  - [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)
+  - [Commits](https://github.com/github/codeql-action/compare/aa578102511db1f4524ed59b8cc2bae4f6e88195...df409f7d9260372bd5f19e5b04e83cb3c43714ae)
+
+  Updates `python-semantic-release/python-semantic-release` from 9.15.1 to 9.15.2
+  - [Release notes](https://github.com/python-semantic-release/python-semantic-release/releases)
+  - [Changelog](https://github.com/python-semantic-release/python-semantic-release/blob/master/CHANGELOG.md)
+  - [Commits](https://github.com/python-semantic-release/python-semantic-release/compare/a3233795eb26b6d5167192ffd4550947d764a9b0...7b3f71697ccfbaef884e1e754b6364e974b134cf)
+
+  ---
+  updated-dependencies:
+  - dependency-name: github/codeql-action
+    dependency-type: direct:production
+    update-type: version-update:semver-patch
+    dependency-group: github-actions-dependencies
+  - dependency-name: python-semantic-release/python-semantic-release
+    dependency-type: direct:production
+    update-type: version-update:semver-patch
+    dependency-group: github-actions-dependencies
+  ...
+
+  Signed-off-by: dependabot[bot] <support@github.com>
+* chore(deps): Bump the github-actions-dependencies group with 4 updates ([`7b50ecb`](https://github.com/sandialabs/staged-script/commit/7b50ecbf31b161455c845d79557535fafc641d7e))
+
+  Bumps the github-actions-dependencies group with 4 updates: [github/codeql-action](https://github.com/github/codeql-action), [codecov/codecov-action](https://github.com/codecov/codecov-action), [python-semantic-release/python-semantic-release](https://github.com/python-semantic-release/python-semantic-release) and [pypa/gh-action-pypi-publish](https://github.com/pypa/gh-action-pypi-publish).
+
+
+  Updates `github/codeql-action` from 3.27.5 to 3.27.6
+  - [Release notes](https://github.com/github/codeql-action/releases)
+  - [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)
+  - [Commits](https://github.com/github/codeql-action/compare/f09c1c0a94de965c15400f5634aa42fac8fb8f88...aa578102511db1f4524ed59b8cc2bae4f6e88195)
+
+  Updates `codecov/codecov-action` from 5.0.7 to 5.1.1
+  - [Release notes](https://github.com/codecov/codecov-action/releases)
+  - [Changelog](https://github.com/codecov/codecov-action/blob/main/CHANGELOG.md)
+  - [Commits](https://github.com/codecov/codecov-action/compare/015f24e6818733317a2da2edd6290ab26238649a...7f8b4b4bde536c465e797be725718b88c5d95e0e)
+
+  Updates `python-semantic-release/python-semantic-release` from 9.15.0 to 9.15.1
+  - [Release notes](https://github.com/python-semantic-release/python-semantic-release/releases)
+  - [Changelog](https://github.com/python-semantic-release/python-semantic-release/blob/master/CHANGELOG.md)
+  - [Commits](https://github.com/python-semantic-release/python-semantic-release/compare/2773f6d901a5cefed959c6ccda302ef41fed67dc...a3233795eb26b6d5167192ffd4550947d764a9b0)
+
+  Updates `pypa/gh-action-pypi-publish` from 1.12.2 to 1.12.3
+  - [Release notes](https://github.com/pypa/gh-action-pypi-publish/releases)
+  - [Commits](https://github.com/pypa/gh-action-pypi-publish/compare/15c56dba361d8335944d31a2ecd17d700fc7bcbc...67339c736fd9354cd4f8cb0b744f2b82a74b5c70)
+
+  ---
+  updated-dependencies:
+  - dependency-name: github/codeql-action
+    dependency-type: direct:production
+    update-type: version-update:semver-patch
+    dependency-group: github-actions-dependencies
+  - dependency-name: codecov/codecov-action
+    dependency-type: direct:production
+    update-type: version-update:semver-minor
+    dependency-group: github-actions-dependencies
+  - dependency-name: python-semantic-release/python-semantic-release
+    dependency-type: direct:production
+    update-type: version-update:semver-patch
+    dependency-group: github-actions-dependencies
+  - dependency-name: pypa/gh-action-pypi-publish
+    dependency-type: direct:production
+    update-type: version-update:semver-patch
+    dependency-group: github-actions-dependencies
+  ...
+
+  Signed-off-by: dependabot[bot] <support@github.com>
+
+### Patch
+* patch: Support Python 3.13 ([`c0a242c`](https://github.com/sandialabs/staged-script/commit/c0a242c8c3a1866aff0c923c0088a602b51b8350))
+
 ## v2.0.0 (2024-12-03)
 
 ### Chores
