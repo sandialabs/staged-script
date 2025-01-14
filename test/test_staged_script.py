@@ -247,8 +247,7 @@ def test_run_dry_run(
     ],
 )
 @patch(
-    "reverse_argparse.ReverseArgumentParser."
-    "get_pretty_command_line_invocation"
+    "reverse_argparse.ReverseArgumentParser.get_pretty_command_line_invocation"
 )
 def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,

@@ -34,7 +34,8 @@ def test_parser_no_registered_stages() -> None:
     script = MyScript(set())
     help_text = script.parser.format_help()
     for text in [
-        "Options for retrying stages" "-retry-attempts",
+        "Options for retrying stages",
+        "-retry-attempts",
         "-retry-delay",
         "-retry-timeout",
     ]:
