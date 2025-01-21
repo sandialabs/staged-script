@@ -13,7 +13,7 @@ sys.path.append(str(Path.cwd().parents[2].resolve() / "staged_script"))
 # -- Project information ------------------------------------------------------
 
 project = "staged-script"
-copyright = (  # noqa: A001
+project_copyright = (
     "2024, National Technology & Engineering Solutions of Sandia, LLC (NTESS)"
 )
 author = "Jason M. Gates"
