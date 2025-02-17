@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
+      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
       with:
         egress-policy: audit
 
@@ -29,7 +29,7 @@ jobs:
 
     - name: Python Semantic Release
       id: release
-      uses: python-semantic-release/python-semantic-release@c02663855a94e46eb021441cd6fb85beb25abdf7 # master
+      uses: python-semantic-release/python-semantic-release@3b7466302c07c543377ec0c79bf178291d51f7ca # master
       with:
         github_token: ${{ secrets.GH_TOKEN }}
 
