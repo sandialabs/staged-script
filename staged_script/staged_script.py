@@ -16,6 +16,7 @@ import re
 import shlex
 import subprocess
 from argparse import (
+    Action,
     ArgumentDefaultsHelpFormatter,
     ArgumentParser,
     Namespace,
@@ -74,6 +75,23 @@ class StagedScript:
         retry_arg_group (argparse._ArgumentGroup):  A container within
             the :class:`ArgumentParser` holding all the arguments
             associated with retrying stages.
+        retry_attempts (Dict[str, int]):  A mapping from stage names to
+            the number of times to attempt retrying each stage.
+        retry_attempts_arg (Dict[str, argparse.Action]):  The
+            corresponding arguments in the :class:`ArgumentParser`, so
+            subclass developers can modify them if needed.
+        retry_delay (Dict[str, float]):  A mapping from stage names to
+            how long to wait (in seconds) before attempting to retry a
+            stage.
+        retry_delay_arg (Dict[str, argparse.Action]):  The
+            corresponding arguments in the :class:`ArgumentParser`, so
+            subclass developers can modify them if needed.
+        retry_timeout (Dict[str, int]):  A mapping from stage names to
+            how long to wait (in seconds) before giving up on retrying
+            the stage.
+        retry_timeout_arg (Dict[str, argparse.Action]):  The
+            corresponding arguments in the :class:`ArgumentParser`, so
+            subclass developers can modify them if needed.
         script_name (str):  The name of the script (the
             :class:`StagedScript` subclass) being run.
         script_stem (str):  Same as :attr:`script_name`, but without the
@@ -90,28 +108,6 @@ class StagedScript:
             the user via the command line arguments.
         start_time (datetime):  The time at which this object was
             initialized.
-
-    Note that additional attributes are automatically generated for each
-    ``stage`` registered for a subclass object:
-
-    ``STAGE_NAME_retry_attempts`` (int)
-        The number of times to attempt retrying the ``STAGE_NAME``
-        stage.
-    ``STAGE_NAME_retry_attempts_arg`` (argparse.Action)
-        The corresponding argument in the :class:`ArgumentParser`, so
-        subclass developers can modify it if needed.
-    ``STAGE_NAME_retry_delay`` (float)
-        How long to wait (in seconds) before attempting to retry the
-        ``STAGE_NAME`` stage.
-    ``STAGE_NAME_retry_delay_arg`` (argparse.Action)
-        The corresponding argument in the :class:`ArgumentParser`, so
-        subclass developers can modify it if needed.
-    ``STAGE_NAME_retry_timeout`` (int)
-        How long to wait (in seconds) before giving up on retrying the
-        ``STAGE_NAME`` stage.
-    ``STAGE_NAME_retry_timeout_arg`` (argparse.Action)
-        The corresponding argument in the :class:`ArgumentParser`, so
-        subclass developers can modify it if needed.
     """
 
     def __init__(
@@ -155,6 +151,12 @@ class StagedScript:
         self.dry_run = False
         self.durations: list[StageDuration] = []
         self.print_commands = print_commands
+        self.retry_attempts: Dict[str, int] = {}
+        self.retry_attempts_arg: Dict[str, Action] = {}
+        self.retry_delay: Dict[str, float] = {}
+        self.retry_delay_arg: Dict[str, Action] = {}
+        self.retry_timeout: Dict[str, int] = {}
+        self.retry_timeout_arg: Dict[str, Action] = {}
         self.script_name = Path(__main__.__file__).name
         self.script_stem = Path(__main__.__file__).stem
         self.script_success = True
@@ -320,9 +322,9 @@ class StagedScript:
                 """
                 self.current_stage = stage_name
                 get_phase_method(self, "_run_pre_stage_actions")()
-                timeout = getattr(self, f"{stage_name}_retry_timeout")
-                attempts = getattr(self, f"{stage_name}_retry_attempts")
-                delay = getattr(self, f"{stage_name}_retry_delay")
+                timeout = self.retry_timeout[stage_name]
+                attempts = self.retry_attempts[stage_name]
+                delay = self.retry_delay[stage_name]
                 stop_after_timeout = stop_after_delay(timeout)
                 stop_after_max_attempts = stop_after_attempt(attempts + 1)
                 retry = Retrying(
@@ -590,10 +592,7 @@ class StagedScript:
             retry:  The :class:`Retrying` controller, which contains
                 information about the retrying that was done.
         """
-        retry_attempts = getattr(
-            self, f"{self.current_stage}_retry_attempts", 0
-        )
-        if retry_attempts > 0:
+        if self.retry_attempts[self.current_stage] > 0:
             stage_time = timedelta(
                 seconds=retry.statistics["delay_since_first_attempt"]
             )
@@ -660,9 +659,9 @@ class StagedScript:
 
         .. code-block:: python
 
-            self.foo_retry_attempts_arg.help = argparse.SUPPRESS
-            self.foo_retry_delay_arg.help = argparse.SUPPRESS
-            self.foo_retry_timeout_arg.help = argparse.SUPPRESS
+            self.retry_attempts_arg["foo"].help = argparse.SUPPRESS
+            self.retry_delay_arg["foo"].help = argparse.SUPPRESS
+            self.retry_timeout_arg["foo"].help = argparse.SUPPRESS
 
         And if you want to remove the title for the retry group
         altogether, you can do so with:
@@ -706,7 +705,7 @@ class StagedScript:
                     type=int,
                     help=f"How many times to retry the {stage!r} stage.",
                 )
-                setattr(self, f"{stage}_retry_attempts_arg", retry_attempts)
+                self.retry_attempts_arg[stage] = retry_attempts
                 retry_delay = self.retry_arg_group.add_argument(
                     f"--{stage}-retry-delay",
                     default=0,
@@ -714,7 +713,7 @@ class StagedScript:
                     help="How long to wait (in seconds) before retrying the "
                     f"{stage!r} stage.",
                 )
-                setattr(self, f"{stage}_retry_delay_arg", retry_delay)
+                self.retry_delay_arg[stage] = retry_delay
                 retry_timeout = self.retry_arg_group.add_argument(
                     f"--{stage}-retry-timeout",
                     default=60,
@@ -722,7 +721,7 @@ class StagedScript:
                     help="How long to wait (in seconds) before giving up on "
                     f"retrying the {stage!r} stage.",
                 )
-                setattr(self, f"{stage}_retry_timeout_arg", retry_timeout)
+                self.retry_timeout_arg[stage] = retry_timeout
         return my_parser
 
     def parse_args(self, argv: list[str]) -> None:
@@ -755,12 +754,13 @@ class StagedScript:
             set(self.args.stage) if self.args.stage is not None else set()
         )
         for stage in self.stages:
-            for retry_arg in [
-                f"{stage}_retry_attempts",
-                f"{stage}_retry_delay",
-                f"{stage}_retry_timeout",
-            ]:
-                setattr(self, retry_arg, getattr(self.args, retry_arg, None))
+            for arg in ["attempts", "delay", "timeout"]:
+                retry_arg = getattr(self, f"retry_{arg}")
+                retry_arg[stage] = getattr(
+                    self.args,
+                    f"{stage}_retry_{arg}",
+                    None,
+                )
 
     def raise_parser_error(self, message):
         """
