@@ -2,6 +2,11 @@
 
 
 
+## v2.0.3 (2025-06-09)
+
+### Patch
+* patch: Sign release commits and tags ([`4f2caa1`](https://github.com/sandialabs/staged-script/commit/4f2caa191e797e8dad7f2d7cda6511c70feb458c))
+
 ## v2.0.2 (2025-05-27)
 
 ### Chores

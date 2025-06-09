@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "staged-script"
-version = "2.0.2"
+version = "2.0.3"
 license = "LICENSE.md"
 readme = "README.md"
 keywords = [
