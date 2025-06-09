@@ -61,12 +61,12 @@ class MyScript(StagedScript):
     def parser(self) -> ArgumentParser:
         my_parser = super().parser
         my_parser.description = "Demonstrate adding arguments to the parser."
-        self.hello_retry_attempts_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.hello_retry_delay_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.hello_retry_timeout_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.goodbye_retry_attempts_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.goodbye_retry_delay_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.goodbye_retry_timeout_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
+        self.retry_attempts_arg["hello"].help = argparse.SUPPRESS
+        self.retry_delay_arg["hello"].help = argparse.SUPPRESS
+        self.retry_timeout_arg["hello"].help = argparse.SUPPRESS
+        self.retry_attempts_arg["goodbye"].help = argparse.SUPPRESS
+        self.retry_delay_arg["goodbye"].help = argparse.SUPPRESS
+        self.retry_timeout_arg["goodbye"].help = argparse.SUPPRESS
         my_parser.set_defaults(
             stage=list(self.stages),
             flaky_retry_attempts=5,
