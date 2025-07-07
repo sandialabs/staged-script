@@ -30,12 +30,12 @@ class MyScript(StagedScript):
         my_parser.description = "Demonstrate removing the retry arguments."
         self.retry_arg_group.title = argparse.SUPPRESS
         self.retry_arg_group.description = argparse.SUPPRESS
-        self.hello_retry_attempts_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.hello_retry_delay_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.hello_retry_timeout_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.goodbye_retry_attempts_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.goodbye_retry_delay_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
-        self.goodbye_retry_timeout_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
+        self.retry_attempts_arg["hello"].help = argparse.SUPPRESS
+        self.retry_delay_arg["hello"].help = argparse.SUPPRESS
+        self.retry_timeout_arg["hello"].help = argparse.SUPPRESS
+        self.retry_attempts_arg["goodbye"].help = argparse.SUPPRESS
+        self.retry_delay_arg["goodbye"].help = argparse.SUPPRESS
+        self.retry_timeout_arg["goodbye"].help = argparse.SUPPRESS
         return my_parser
 
     def main(self, argv: list[str]) -> None:

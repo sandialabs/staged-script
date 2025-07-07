@@ -76,14 +76,6 @@ by adding the following to the ``MyScript`` class:
    :lines: 27-39
    :caption: ``example/ex_1_removing_the_retry_arguments.py``
 
-.. note::
-
-   An upcoming release will refactor the retry argument attributes so
-   `mypy`_ will be happy with them.  For now, just use the ``type:
-   ignore[attr-defined]`` comments.
-
-.. _mypy:  https://mypy-lang.org/
-
 Now when we look at the ``--help`` text, we see:
 
 .. command-output:: python3 ../../example/ex_1_removing_the_retry_arguments.py --help
