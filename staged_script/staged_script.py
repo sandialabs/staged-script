@@ -26,7 +26,7 @@ from argparse import (
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Callable, NamedTuple, Optional
+from typing import Any, Callable, NamedTuple, NoReturn, Optional
 
 import __main__
 import rich.traceback
@@ -145,7 +145,7 @@ class StagedScript:
         console_force_terminal: Optional[bool] = None,
         console_log_path: bool = True,
         print_commands: bool = True,
-    ):
+    ) -> None:
         """
         Initialize a :class:`StagedScript` object.
 
@@ -248,7 +248,7 @@ class StagedScript:
 
         def decorator(func: Callable) -> Callable:
             def get_phase_method(  # noqa: D417
-                self,
+                self,  # noqa: ANN001
                 method_name: str,
             ) -> Callable:
                 """
@@ -273,9 +273,9 @@ class StagedScript:
                 )
 
             def run_retryable_phases(  # noqa: D417
-                self,
-                *args,
-                **kwargs,
+                self,  # noqa: ANN001
+                *args: Any,  # noqa: ANN401
+                **kwargs: Any,  # noqa: ANN401
             ) -> None:
                 """
                 Run the retryable phases.
@@ -310,7 +310,7 @@ class StagedScript:
                 get_phase_method(self, "_end_stage")()
 
             @functools.wraps(func)
-            def wrapper(self, *args, **kwargs) -> None:
+            def wrapper(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN001, ANN401
                 """
                 Turn a function into a stage.
 
@@ -759,7 +759,7 @@ class StagedScript:
             ]:
                 setattr(self, retry_arg, getattr(self.args, retry_arg, None))
 
-    def raise_parser_error(self, message):
+    def raise_parser_error(self, message: str) -> NoReturn:
         """
         Raise a parser error.
 
@@ -788,7 +788,7 @@ class StagedScript:
         *,
         pretty_print: bool = False,
         print_command: Optional[bool] = None,
-        **kwargs,
+        **kwargs: Any,  # noqa: ANN401
     ) -> CompletedProcess:
         """
         Run a command in the underlying shell.
