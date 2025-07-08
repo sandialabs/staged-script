@@ -11,6 +11,8 @@ your own staged scripts, along with some helpers.
 
 # SPDX-License-Identifier: BSD-3-Clause
 
+from __future__ import annotations
+
 import functools
 import re
 import shlex
@@ -365,7 +367,6 @@ class StagedScript:
         were met before attempting the stage, and erroring out
         appropriately if not.
         """
-        pass
 
     def _begin_stage(self, heading: str) -> None:
         """
@@ -495,7 +496,6 @@ class StagedScript:
         were met before moving on, and erroring out appropriately if
         not.
         """
-        pass
 
     def _prepare_to_retry_stage(self, retry_state: RetryCallState) -> None:
         """
@@ -1023,8 +1023,6 @@ class RetryStage(TryAgain):
     that a stage should be retried.
     """
 
-    pass
-
 
 class HelpFormatter(
     ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter
@@ -1036,5 +1034,3 @@ class HelpFormatter(
     treats the description as raw text (doesn't do any automatic
     formatting) and shows default values of arguments.
     """
-
-    pass
