@@ -116,7 +116,7 @@ extend-select = [
     "RUF",
     "S",
     "SIM",
-    # "SLF",
+    "SLF",
     "SLOT",
     "T10",
     "T20",

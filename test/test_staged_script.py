@@ -18,6 +18,7 @@ import pytest
 from rich.console import Console
 
 from staged_script import StagedScript, StageDuration
+from staged_script.staged_script import validate_stage_name
 
 
 @pytest.fixture
@@ -39,21 +40,21 @@ def test_print_dry_run_message(
     assert expected in captured.out
 
 
-def test__validate_stage_name() -> None:
-    """Test the :func:`validate_stage_name` method."""
-    StagedScript._validate_stage_name("valid")
+def test_validate_stage_name() -> None:
+    """Test the :func:`validate_stage_name` function."""
+    validate_stage_name("valid")
 
 
 @pytest.mark.parametrize(
     "stage_name", ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
 )
-def test__validate_stage_name_raises(stage_name: str) -> None:
+def test_validate_stage_name_raises(stage_name: str) -> None:
     """Ensure :func:`validate_stage_name` raises an exception when needed."""
     with pytest.raises(
         ValueError,
         match=f"'{stage_name}' must contain only lowercase letters",
     ):
-        StagedScript._validate_stage_name(stage_name)
+        validate_stage_name(stage_name)
 
 
 def test__begin_stage(

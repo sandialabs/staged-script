@@ -43,6 +43,28 @@ from tenacity.wait import wait_fixed
 rich.traceback.install()
 
 
+def validate_stage_name(stage_name: str) -> None:
+    """
+    Validate a stage name.
+
+    Ensure a stage name consists of only lowercase letters.  This is
+    both to simplify implementation details within the
+    :class:`StagedScript` class, and to provide the best user experience
+    for users of your :class:`StagedScript` subclasses.
+
+    Args:
+        stage_name:  The name of the stage.
+
+    Raises:
+        ValueError:  If the stage name is invalid.
+    """
+    if not re.match("^[a-z]+$", stage_name):
+        message = (
+            f"Stage name {stage_name!r} must contain only lowercase letters."
+        )
+        raise ValueError(message)
+
+
 class StagedScript:
     """
     The base class for all staged scripts.
@@ -147,7 +169,7 @@ class StagedScript:
             and optionally pass in additional arguments.
         """
         for stage in stages:
-            self._validate_stage_name(stage)
+            validate_stage_name(stage)
         self.args = Namespace()
         self.commands_executed: list[str] = []
         self.console = Console(
@@ -164,29 +186,6 @@ class StagedScript:
         self.stages = stages
         self.stages_to_run: set[str] = set()
         self.start_time = datetime.now(tz=timezone.utc)
-
-    @staticmethod
-    def _validate_stage_name(stage_name: str) -> None:
-        """
-        Validate the stage name.
-
-        Ensure the stage name consists of only lowercase letters.  This
-        is both to simplify implementation details within the class, and
-        to provide the best user experience for users of your
-        :class:`StagedScript` subclasses.
-
-        Args:
-            stage_name:  The name of the stage.
-
-        Raises:
-            ValueError:  If the stage name is invalid.
-        """
-        if not re.match("^[a-z]+$", stage_name):
-            message = (
-                f"Stage name {stage_name!r} must contain only lowercase "
-                "letters."
-            )
-            raise ValueError(message)
 
     #
     # The `stage` decorator.
@@ -245,9 +244,7 @@ class StagedScript:
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """
-        __class__._validate_stage_name(  # type: ignore[name-defined]
-            stage_name
-        )
+        validate_stage_name(stage_name)
 
         def decorator(func: Callable) -> Callable:
             def get_phase_method(  # noqa: D417
