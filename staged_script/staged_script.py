@@ -11,6 +11,8 @@ your own staged scripts, along with some helpers.
 
 # SPDX-License-Identifier: BSD-3-Clause
 
+from __future__ import annotations
+
 import functools
 import re
 import shlex
@@ -24,7 +26,7 @@ from argparse import (
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Callable, NamedTuple, Optional
+from typing import Any, Callable, NamedTuple, NoReturn, Optional
 
 import __main__
 import rich.traceback
@@ -39,6 +41,28 @@ from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 
 rich.traceback.install()
+
+
+def validate_stage_name(stage_name: str) -> None:
+    """
+    Validate a stage name.
+
+    Ensure a stage name consists of only lowercase letters.  This is
+    both to simplify implementation details within the
+    :class:`StagedScript` class, and to provide the best user experience
+    for users of your :class:`StagedScript` subclasses.
+
+    Args:
+        stage_name:  The name of the stage.
+
+    Raises:
+        ValueError:  If the stage name is invalid.
+    """
+    if not re.match("^[a-z]+$", stage_name):
+        message = (
+            f"Stage name {stage_name!r} must contain only lowercase letters."
+        )
+        raise ValueError(message)
 
 
 class StagedScript:
@@ -121,7 +145,7 @@ class StagedScript:
         console_force_terminal: Optional[bool] = None,
         console_log_path: bool = True,
         print_commands: bool = True,
-    ):
+    ) -> None:
         """
         Initialize a :class:`StagedScript` object.
 
@@ -145,7 +169,7 @@ class StagedScript:
             and optionally pass in additional arguments.
         """
         for stage in stages:
-            self._validate_stage_name(stage)
+            validate_stage_name(stage)
         self.args = Namespace()
         self.commands_executed: list[str] = []
         self.console = Console(
@@ -162,29 +186,6 @@ class StagedScript:
         self.stages = stages
         self.stages_to_run: set[str] = set()
         self.start_time = datetime.now(tz=timezone.utc)
-
-    @staticmethod
-    def _validate_stage_name(stage_name: str) -> None:
-        """
-        Validate the stage name.
-
-        Ensure the stage name consists of only lowercase letters.  This
-        is both to simplify implementation details within the class, and
-        to provide the best user experience for users of your
-        :class:`StagedScript` subclasses.
-
-        Args:
-            stage_name:  The name of the stage.
-
-        Raises:
-            ValueError:  If the stage name is invalid.
-        """
-        if not re.match("^[a-z]+$", stage_name):
-            message = (
-                f"Stage name {stage_name!r} must contain only lowercase "
-                "letters."
-            )
-            raise ValueError(message)
 
     #
     # The `stage` decorator.
@@ -243,13 +244,11 @@ class StagedScript:
             heading:  A heading message to print indicating what will
                 happen in the stage.
         """
-        __class__._validate_stage_name(  # type: ignore[name-defined]
-            stage_name
-        )
+        validate_stage_name(stage_name)
 
         def decorator(func: Callable) -> Callable:
             def get_phase_method(  # noqa: D417
-                self,
+                self,  # noqa: ANN001
                 method_name: str,
             ) -> Callable:
                 """
@@ -274,9 +273,9 @@ class StagedScript:
                 )
 
             def run_retryable_phases(  # noqa: D417
-                self,
-                *args,
-                **kwargs,
+                self,  # noqa: ANN001
+                *args: Any,  # noqa: ANN401
+                **kwargs: Any,  # noqa: ANN401
             ) -> None:
                 """
                 Run the retryable phases.
@@ -311,7 +310,7 @@ class StagedScript:
                 get_phase_method(self, "_end_stage")()
 
             @functools.wraps(func)
-            def wrapper(self, *args, **kwargs) -> None:
+            def wrapper(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN001, ANN401
                 """
                 Turn a function into a stage.
 
@@ -365,7 +364,6 @@ class StagedScript:
         were met before attempting the stage, and erroring out
         appropriately if not.
         """
-        pass
 
     def _begin_stage(self, heading: str) -> None:
         """
@@ -495,7 +493,6 @@ class StagedScript:
         were met before moving on, and erroring out appropriately if
         not.
         """
-        pass
 
     def _prepare_to_retry_stage(self, retry_state: RetryCallState) -> None:
         """
@@ -762,7 +759,7 @@ class StagedScript:
             ]:
                 setattr(self, retry_arg, getattr(self.args, retry_arg, None))
 
-    def raise_parser_error(self, message):
+    def raise_parser_error(self, message: str) -> NoReturn:
         """
         Raise a parser error.
 
@@ -791,7 +788,7 @@ class StagedScript:
         *,
         pretty_print: bool = False,
         print_command: Optional[bool] = None,
-        **kwargs,
+        **kwargs: Any,  # noqa: ANN401
     ) -> CompletedProcess:
         """
         Run a command in the underlying shell.
@@ -1023,8 +1020,6 @@ class RetryStage(TryAgain):
     that a stage should be retried.
     """
 
-    pass
-
 
 class HelpFormatter(
     ArgumentDefaultsHelpFormatter, RawDescriptionHelpFormatter
@@ -1036,5 +1031,3 @@ class HelpFormatter(
     treats the description as raw text (doesn't do any automatic
     formatting) and shows default values of arguments.
     """
-
-    pass

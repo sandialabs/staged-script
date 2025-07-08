@@ -42,7 +42,7 @@ class MyAdvancedScript(StagedScript):
     def _run_pre_stage_actions(self) -> None:
         print("inside '_run_pre_stage_actions' function")
 
-    def _begin_stage(self, heading: str) -> None:
+    def _begin_stage(self, _heading: str) -> None:
         print("inside '_begin_stage' function")
 
     def _skip_stage(self) -> None:
@@ -54,10 +54,10 @@ class MyAdvancedScript(StagedScript):
     def _run_post_stage_actions(self) -> None:
         print("inside '_run_post_stage_actions' function")
 
-    def _handle_stage_retry_error(self, retry: Retrying) -> None:
+    def _handle_stage_retry_error(self, _retry: Retrying) -> None:
         print("inside '_handle_stage_retry_error' function")
 
-    def _prepare_to_retry_stage(self, retry_state: RetryCallState) -> None:
+    def _prepare_to_retry_stage(self, _retry_state: RetryCallState) -> None:
         print("inside '_prepare_to_retry_stage' function")
 
 
@@ -125,7 +125,7 @@ def test_stage(  # noqa: PLR0913
         )
     if custom_begin_stage:
         script._begin_stage_test = (  # type: ignore[attr-defined]
-            lambda heading: print("inside '_begin_stage_test' function")
+            lambda _heading: print("inside '_begin_stage_test' function")
         )
     if custom_skip_stage:
         script._skip_stage_test = lambda: print(  # type: ignore[attr-defined]
@@ -178,13 +178,13 @@ def test_stage_retry(
     script.stages_to_run = {"test"}
     if custom_prepare_to_retry:
         script._prepare_to_retry_stage_test = (  # type: ignore[attr-defined]
-            lambda retry_state: print(
+            lambda _retry_state: print(
                 "inside '_prepare_to_retry_stage_test' function"
             )
         )
     if custom_handle_retry_error:
         script._handle_stage_retry_error_test = (  # type: ignore[attr-defined]
-            lambda retry: print(
+            lambda _retry: print(
                 "inside '_handle_stage_retry_error_test' function"
             )
         )

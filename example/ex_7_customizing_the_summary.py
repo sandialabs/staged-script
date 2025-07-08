@@ -7,6 +7,8 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 
+from __future__ import annotations
+
 import argparse
 import functools
 import platform
@@ -27,7 +29,7 @@ class MyScript(StagedScript):
         console_force_terminal: Optional[bool] = None,
         console_log_path: bool = True,
         print_commands: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             stages,
             console_force_terminal=console_force_terminal,

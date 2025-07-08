@@ -6,6 +6,8 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 
+from __future__ import annotations
+
 import shlex
 from datetime import datetime, timedelta, timezone
 from subprocess import CompletedProcess
@@ -16,6 +18,7 @@ import pytest
 from rich.console import Console
 
 from staged_script import StagedScript, StageDuration
+from staged_script.staged_script import validate_stage_name
 
 
 @pytest.fixture
@@ -37,21 +40,21 @@ def test_print_dry_run_message(
     assert expected in captured.out
 
 
-def test__validate_stage_name() -> None:
-    """Test the :func:`validate_stage_name` method."""
-    StagedScript._validate_stage_name("valid")
+def test_validate_stage_name() -> None:
+    """Test the :func:`validate_stage_name` function."""
+    validate_stage_name("valid")
 
 
 @pytest.mark.parametrize(
     "stage_name", ["Uppercase", "spa ces", "hyphen-ated", "under_scores"]
 )
-def test__validate_stage_name_raises(stage_name: str) -> None:
+def test_validate_stage_name_raises(stage_name: str) -> None:
     """Ensure :func:`validate_stage_name` raises an exception when needed."""
     with pytest.raises(
         ValueError,
         match=f"'{stage_name}' must contain only lowercase letters",
     ):
-        StagedScript._validate_stage_name(stage_name)
+        validate_stage_name(stage_name)
 
 
 def test__begin_stage(
@@ -91,7 +94,7 @@ def test__skip_stage(
 @pytest.mark.parametrize("retry_attempts", [0, 5])
 @patch("tenacity.Retrying")
 def test__handle_stage_retry_error(
-    mock_Retrying: MagicMock,
+    mock_retrying: MagicMock,
     retry_attempts: int,
     script: StagedScript,
     capsys: pytest.CaptureFixture,
@@ -99,7 +102,7 @@ def test__handle_stage_retry_error(
     """Test the :func:`_handle_stage_retry_error` method."""
     script.current_stage = "test"
     script.test_retry_attempts = retry_attempts  # type: ignore[attr-defined]
-    retry = mock_Retrying()
+    retry = mock_retrying()
     retry.statistics = {
         "delay_since_first_attempt": 1234,
         "attempt_number": retry_attempts,
@@ -121,14 +124,14 @@ def test__handle_stage_retry_error(
 
 @patch("tenacity.RetryCallState")
 def test__prepare_to_retry_stage(
-    mock_RetryCallState: MagicMock,
+    mock_retry_call_state: MagicMock,
     script: StagedScript,
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the :func:`_prepare_to_retry_stage` method."""
     script.current_stage = "test"
-    retry_state = mock_RetryCallState()
-    retry_state.__repr__ = lambda self: "mock_RetryCallState.__repr__"
+    retry_state = mock_retry_call_state()
+    retry_state.__repr__ = lambda _self: "mock_RetryCallState.__repr__"
     script._prepare_to_retry_stage(retry_state)
     captured = capsys.readouterr()
     for text in [
