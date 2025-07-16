@@ -2,6 +2,35 @@
 
 
 
+## v2.0.4 (2025-07-16)
+
+### Chores
+* chore: Update Ruff linters ([`9bc25f7`](https://github.com/sandialabs/staged-script/commit/9bc25f704a4b544588027957ac7315b5c1af3840))
+
+### Code style
+* style: Finish type-hinting ([`ef76d16`](https://github.com/sandialabs/staged-script/commit/ef76d167d7d2b83d2c259e6edbc79015428dd278))
+
+### Patch
+* patch: Add SLSA provenance to release assets ([`9050760`](https://github.com/sandialabs/staged-script/commit/9050760cf2c4f506fa2148df5ef95364c93efa80))
+
+  See https://slsa.dev/ for motivation.
+
+  Creating a patch release to ensure these additions to the automated
+  release process work.
+
+  Note that the `release` job has been subdivided, because the SLSA
+  provenance reusable workflow cannot be used as a step within a job, but
+  must be used as a job on its own.
+
+### Refactoring
+* refactor: Switch method to module function ([`b7c26fc`](https://github.com/sandialabs/staged-script/commit/b7c26fce99436b9792e038717a8fa913e9ff993d))
+
+  I should have done this ages ago. Instead of `_validate_stage_name`
+  being a static method in the `StagedScript` class, make it a function in
+  the `staged_script` module. We then no longer need to ignore the MyPy
+  error about `__class__` being undefined, and Ruff's SLF linter won't
+  complain about private member access.
+
 ## v2.0.3 (2025-06-09)
 
 ### Patch
