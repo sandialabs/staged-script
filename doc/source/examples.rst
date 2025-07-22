@@ -281,7 +281,7 @@ flaky stage has been run.
 .. literalinclude:: ../../example/ex_6_creating_retryable_stages.py
    :language: python
    :linenos:
-   :lines: 21-35
+   :lines: 23-37
    :emphasize-lines: 15
    :caption: ``example/ex_6_creating_retryable_stages.py``
 
@@ -293,7 +293,7 @@ something where a human would say, "Just try again," and setting
 .. literalinclude:: ../../example/ex_6_creating_retryable_stages.py
    :language: python
    :linenos:
-   :lines: 42-51
+   :lines: 44-53
    :emphasize-lines: 7-8,10
    :caption: ``example/ex_6_creating_retryable_stages.py``
 
@@ -302,7 +302,7 @@ Next we need to adjust the parser to account for this new stage.
 .. literalinclude:: ../../example/ex_6_creating_retryable_stages.py
    :language: python
    :linenos:
-   :lines: 60-87
+   :lines: 62-89
    :emphasize-lines: 13-14
    :caption: ``example/ex_6_creating_retryable_stages.py``
 
@@ -356,7 +356,7 @@ above, but you have the flexibility to :ref:`extend the behavior
 .. literalinclude:: ../../example/ex_7_customizing_the_summary.py
    :language: python
    :linenos:
-   :lines: 146-158
+   :lines: 148-160
    :emphasize-lines: 6-9
    :caption: ``example/ex_7_customizing_the_summary.py``
 
