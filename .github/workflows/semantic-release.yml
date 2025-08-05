@@ -31,7 +31,7 @@ jobs:
 
     - name: Python Semantic Release
       id: release
-      uses: python-semantic-release/python-semantic-release@2896129e02bb7809d2cf0c1b8e9e795ee27acbcf # v10.2.0
+      uses: python-semantic-release/python-semantic-release@bdbfd234e59809d3796e9a47bb915a8492f4e740 # v10.3.0
       with:
         git_committer_email: "staged-script-semantic-release@sandia.gov"
         git_committer_name: "semantic-release"
@@ -100,7 +100,7 @@ jobs:
         path: dist
 
     - name: Publish to GitHub Releases
-      uses: python-semantic-release/publish-action@b717f67f7e7e9f709357bce5a542846503ce46ec # v10.2.0
+      uses: python-semantic-release/publish-action@403a0644d00ec63b5e780942dcbc606b2dc0aa1e # v10.3.0
       with:
         github_token: ${{ secrets.GH_TOKEN }}
 
