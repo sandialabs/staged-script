@@ -24,14 +24,14 @@ jobs:
       with:
         egress-policy: audit
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
 
     - name: Python Semantic Release
       id: release
-      uses: python-semantic-release/python-semantic-release@bdbfd234e59809d3796e9a47bb915a8492f4e740 # v10.3.0
+      uses: python-semantic-release/python-semantic-release@5b9d941d5b29da138b933660ce1a9df75b54ce25 # v10.3.1
       with:
         git_committer_email: "staged-script-semantic-release@sandia.gov"
         git_committer_name: "semantic-release"
@@ -82,25 +82,25 @@ jobs:
       with:
         egress-policy: audit
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         fetch-depth: 0
         token: ${{ secrets.GH_TOKEN }}
 
     - name: Download Build Artifacts
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
       with:
         name: dist
         path: dist
 
     - name: Download Provenance
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
       with:
         name: ${{ needs.provenance.outputs.provenance-name }}
         path: dist
 
     - name: Publish to GitHub Releases
-      uses: python-semantic-release/publish-action@403a0644d00ec63b5e780942dcbc606b2dc0aa1e # v10.3.0
+      uses: python-semantic-release/publish-action@f8a3b2efc2282bc5219b83ba78ac64b69d6e05b9 # v10.3.1
       with:
         github_token: ${{ secrets.GH_TOKEN }}
 
