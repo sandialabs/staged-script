@@ -26,7 +26,7 @@ from argparse import (
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Any, Callable, NamedTuple, NoReturn
+from typing import Any, NamedTuple, NoReturn, TYPE_CHECKING
 
 import __main__
 import rich.traceback
@@ -39,6 +39,9 @@ from tenacity import RetryCallState, RetryError, Retrying, TryAgain
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
+
+if TYPE_CHECKING:
+    from collections.abc import Callable  # pragma: no cover
 
 rich.traceback.install()
 
