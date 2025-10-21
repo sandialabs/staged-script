@@ -26,7 +26,7 @@ from argparse import (
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from subprocess import CompletedProcess
-from typing import Any, Callable, NamedTuple, NoReturn, Optional
+from typing import Any, NamedTuple, NoReturn, TYPE_CHECKING
 
 import __main__
 import rich.traceback
@@ -39,6 +39,9 @@ from tenacity import RetryCallState, RetryError, Retrying, TryAgain
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
+
+if TYPE_CHECKING:
+    from collections.abc import Callable  # pragma: no cover
 
 rich.traceback.install()
 
@@ -142,7 +145,7 @@ class StagedScript:
         self,
         stages: set[str],
         *,
-        console_force_terminal: Optional[bool] = None,
+        console_force_terminal: bool | None = None,
         console_log_path: bool = True,
         print_commands: bool = True,
     ) -> None:
@@ -787,7 +790,7 @@ class StagedScript:
         command: str,
         *,
         pretty_print: bool = False,
-        print_command: Optional[bool] = None,
+        print_command: bool | None = None,
         **kwargs: Any,  # noqa: ANN401
     ) -> CompletedProcess:
         """
@@ -865,7 +868,7 @@ class StagedScript:
     #
 
     def print_script_execution_summary(
-        self, extra_sections: Optional[dict[str, str]] = None
+        self, extra_sections: dict[str, str] | None = None
     ) -> None:
         """
         Print a summary of everything that was done by the script.
@@ -887,7 +890,7 @@ class StagedScript:
 
             def print_script_execution_summary(
                 self,
-                extra_sections: Optional[dict[str, str]] = None
+                extra_sections: dict[str, str] | None = None
             ) -> None:
                 extras = {"Additional section": "With some details."}
                 if extra_sections is not None:

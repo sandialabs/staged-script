@@ -16,7 +16,6 @@ import socket
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Optional
 
 from staged_script import RetryStage, StagedScript
 
@@ -26,7 +25,7 @@ class MyScript(StagedScript):
         self,
         stages: set[str],
         *,
-        console_force_terminal: Optional[bool] = None,
+        console_force_terminal: bool | None = None,
         console_log_path: bool = True,
         print_commands: bool = True,
     ) -> None:
@@ -147,7 +146,7 @@ class MyScript(StagedScript):
 
     def print_script_execution_summary(
         self,
-        extra_sections: Optional[dict[str, str]] = None,
+        extra_sections: dict[str, str] | None = None,
     ) -> None:
         extras = {
             "Machine details": (

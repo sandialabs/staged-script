@@ -11,7 +11,6 @@ from __future__ import annotations
 import shlex
 from datetime import datetime, timedelta, timezone
 from subprocess import CompletedProcess
-from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -254,7 +253,7 @@ def test_run_dry_run(
 )
 def test_print_script_execution_summary(
     mock_get_pretty_command_line_invocation: MagicMock,
-    extras: Optional[dict[str, str]],
+    extras: dict[str, str] | None,
     script_success: bool,  # noqa: FBT001
     script: StagedScript,
     capsys: pytest.CaptureFixture,
