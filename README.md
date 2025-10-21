@@ -17,7 +17,7 @@
 [![pre-commit.ci Status](https://results.pre-commit.ci/badge/github/sandialabs/staged-script/master.svg)](https://results.pre-commit.ci/latest/github/sandialabs/staged-script/master)
 [![PyPI - Version](https://img.shields.io/pypi/v/staged-script?label=PyPI)](https://pypi.org/project/staged-script/)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/staged-script?label=PyPI%20downloads)
-![Python Version](https://img.shields.io/badge/Python-3.9|3.10|3.11|3.12|3.13-blue.svg)
+![Python Version](https://img.shields.io/badge/Python-3.10|3.11|3.12|3.13|3.14-blue.svg)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 # staged-script
