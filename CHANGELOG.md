@@ -2,6 +2,16 @@
 
 
 
+## v2.0.5 (2025-10-21)
+
+### Documentation
+* docs: Fix examples ([`8cde79e`](https://github.com/sandialabs/staged-script/commit/8cde79e47e2e902928b8c8d7dc6f5b1aebbf1c67))
+
+### Patch
+* patch: Drop support for Python 3.9 ([`2a8d891`](https://github.com/sandialabs/staged-script/commit/2a8d891e54ff1e2448718caaa6f0ebf3b2fcc2d6))
+
+  Also add support for Python 3.14.
+
 ## v2.0.4 (2025-07-16)
 
 ### Chores
