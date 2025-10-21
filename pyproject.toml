@@ -39,11 +39,11 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development",
     "Topic :: Software Development :: Debuggers",
     "Topic :: Software Development :: Documentation",
@@ -60,7 +60,7 @@ Issues = "https://github.com/sandialabs/staged-script/issues"
 
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.10"
 reverse-argparse = "*"
 rich = "*"
 tenacity = "*"
