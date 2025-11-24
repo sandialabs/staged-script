@@ -72,6 +72,57 @@ if __name__ == "__main__":
     my_script.main(sys.argv[1:])
 ```
 
+Executing the script then yields
+```
+>>> my_staged_script.py --stage hello goodbye
+[07:34:19] ╭─────────────────────────────────────────────╮ staged_script.py:937
+           │ Greeting the user                           │
+           ╰─────────────────────────────────────────────╯
+           Executing:  echo 'Hello World'                  staged_script.py:827
+Hello World
+           `hello` stage duration:  0:00:00.020772         staged_script.py:476
+           ╭─────────────────────────────────────────────╮ staged_script.py:937
+           │ Bidding farewell                            │
+           ╰─────────────────────────────────────────────╯
+           Executing:  echo 'Goodbye World'                staged_script.py:827
+Goodbye World
+           `goodbye` stage duration:  0:00:00.012504       staged_script.py:476
+───────────────── ex_0_the_basics.py Script Execution Summary ─────────────────
+                                                           staged_script.py:920
+           ➤ Ran the following:
+
+               ex_0_the_basics.py \
+                   --stage hello goodbye \
+                   --hello-retry-attempts 0 \
+                   --hello-retry-delay 0 \
+                   --hello-retry-timeout 60 \
+                   --goodbye-retry-attempts 0 \
+                   --goodbye-retry-delay 0 \
+                   --goodbye-retry-timeout 60
+
+           ➤ Commands executed:
+
+               echo 'Hello World'
+               echo 'Goodbye World'
+
+           ➤ Timing results:
+
+               ┏━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
+               ┃ Stage   ┃ Duration       ┃
+               ┡━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
+               │ hello   │ 0:00:00.020772 │
+               │ goodbye │ 0:00:00.012504 │
+               ├─────────┼────────────────┤
+               │ Total   │ 0:00:00.035295 │
+               └─────────┴────────────────┘
+
+           ➤ Script result:
+
+               Success
+
+─────────────── End ex_0_the_basics.py Script Execution Summary ───────────────
+```
+
 For more detailed usage and API information, please see
 [our documentation][docs].
 
