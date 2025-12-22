@@ -1,6 +1,6 @@
 # Requirements for building the `staged-script` documentation.
 
-sphinx<=9.0.0
+sphinx<=9.0.4
 sphinx-autodoc-typehints
 sphinx-copybutton
 sphinx-rtd-theme
