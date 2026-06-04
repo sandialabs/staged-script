@@ -124,3 +124,9 @@ customizing):
 .. note::
 
    You can zoom and pan in the image above.
+
+If you're familiar with software design patterns, this overall structure
+follows the `Template Method pattern
+<https://refactoring.guru/design-patterns/template-method>`_: the base
+class defines the high-level algorithm for running a stage, while
+subclasses customize selected steps in that flow.

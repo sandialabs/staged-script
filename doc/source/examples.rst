@@ -188,11 +188,7 @@ the stages as they run.  Recall from
 number of phases, each of which has a corresponding method.  These phase
 methods have reasonable :ref:`default implementations
 <stage_customization>` in the base class, but may be extended or
-overridden in your subclasses.  If you're familiar with software design
-patterns, this overall structure follows the `Template Method pattern
-<https://refactoring.guru/design-patterns/template-method>`_: the base
-class defines the high-level algorithm for running a stage, while
-subclasses customize selected steps in that flow.
+overridden in your subclasses.
 
 .. literalinclude:: ../../example/ex_4_customizing_stage_behavior.py
    :language: python
