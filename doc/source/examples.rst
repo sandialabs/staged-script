@@ -19,8 +19,8 @@ simple stages to say "hello" and "goodbye".
 .. literalinclude:: ../../example/ex_0_the_basics.py
    :language: python
    :linenos:
-   :start-after: [start the-basics]
-   :end-before: [end the-basics]
+   :start-after: [start include-in-docs-examples]
+   :end-before: [end include-in-docs-examples]
    :emphasize-lines: 8-9,12-13,18-19
    :caption: ``example/ex_0_the_basics.py``
 
@@ -74,8 +74,8 @@ by adding the following to the ``MyScript`` class:
 .. literalinclude:: ../../example/ex_1_removing_the_retry_arguments.py
    :language: python
    :linenos:
-   :start-after: [start removing-retry-arguments]
-   :end-before: [end removing-retry-arguments]
+   :start-after: [start include-in-docs-examples]
+   :end-before: [end include-in-docs-examples]
    :caption: ``example/ex_1_removing_the_retry_arguments.py``
 
 .. note::
@@ -111,8 +111,8 @@ that case, you can add the highlighted line:
 .. literalinclude:: ../../example/ex_2_running_certain_stages_by_default.py
    :language: python
    :linenos:
-   :start-after: [start running-stages-by-default]
-   :end-before: [end running-stages-by-default]
+   :start-after: [start include-in-docs-examples]
+   :end-before: [end include-in-docs-examples]
    :emphasize-lines: 4
    :caption: ``example/ex_2_running_certain_stages_by_default.py``
 
@@ -141,8 +141,8 @@ Now let's see about adding some arguments to the parser beyond what
 .. literalinclude:: ../../example/ex_3_adding_arguments.py
    :language: python
    :linenos:
-   :start-after: [start adding-arguments-parser]
-   :end-before: [end adding-arguments-parser]
+   :start-after: [start include-in-docs-examples-parser]
+   :end-before: [end include-in-docs-examples-parser]
    :emphasize-lines: 4-15
    :caption: ``example/ex_3_adding_arguments.py``
 
@@ -153,8 +153,8 @@ arguments to handle these new options.  You can do so by extending the
 .. literalinclude:: ../../example/ex_3_adding_arguments.py
    :language: python
    :linenos:
-   :start-after: [start adding-arguments-parse-args]
-   :end-before: [end adding-arguments-parse-args]
+   :start-after: [start include-in-docs-examples-parse-args]
+   :end-before: [end include-in-docs-examples-parse-args]
    :caption: ``example/ex_3_adding_arguments.py``
 
 .. note::
@@ -171,8 +171,8 @@ the two stages to take them into account.
 .. literalinclude:: ../../example/ex_3_adding_arguments.py
    :language: python
    :linenos:
-   :start-after: [start adding-arguments-stage-usage]
-   :end-before: [end adding-arguments-stage-usage]
+   :start-after: [start include-in-docs-examples-stage-usage]
+   :end-before: [end include-in-docs-examples-stage-usage]
    :emphasize-lines: 4,10
    :caption: ``example/ex_3_adding_arguments.py``
 
@@ -199,8 +199,8 @@ overridden in your subclasses.
 .. literalinclude:: ../../example/ex_4_customizing_stage_behavior.py
    :language: python
    :linenos:
-   :start-after: [start customizing-stage-behavior]
-   :end-before: [end customizing-stage-behavior]
+   :start-after: [start include-in-docs-examples]
+   :end-before: [end include-in-docs-examples]
    :caption: ``example/ex_4_customizing_stage_behavior.py``
 
 .. note::
@@ -250,8 +250,8 @@ is the name of the stage as provided to the :ref:`StagedScript.stage()
 .. literalinclude:: ../../example/ex_5_customizing_individual_stages.py
    :language: python
    :linenos:
-   :start-after: [start customizing-individual-stages]
-   :end-before: [end customizing-individual-stages]
+   :start-after: [start include-in-docs-examples]
+   :end-before: [end include-in-docs-examples]
    :caption: ``example/ex_5_customizing_individual_stages.py``
 
 Now when we run both stages we see:
@@ -289,8 +289,8 @@ flaky stage has been run.
 .. literalinclude:: ../../example/ex_6_creating_retryable_stages.py
    :language: python
    :linenos:
-   :start-after: [start retryable-stage-init]
-   :end-before: [end retryable-stage-init]
+   :start-after: [start include-in-docs-examples-init]
+   :end-before: [end include-in-docs-examples-init]
    :emphasize-lines: 15
    :caption: ``example/ex_6_creating_retryable_stages.py``
 
@@ -302,8 +302,8 @@ something where a human would say, "Just try again," and setting
 .. literalinclude:: ../../example/ex_6_creating_retryable_stages.py
    :language: python
    :linenos:
-   :start-after: [start retryable-stage-body]
-   :end-before: [end retryable-stage-body]
+   :start-after: [start include-in-docs-examples-body]
+   :end-before: [end include-in-docs-examples-body]
    :emphasize-lines: 7-8,10
    :caption: ``example/ex_6_creating_retryable_stages.py``
 
@@ -312,8 +312,8 @@ Next we need to adjust the parser to account for this new stage.
 .. literalinclude:: ../../example/ex_6_creating_retryable_stages.py
    :language: python
    :linenos:
-   :start-after: [start retryable-stage-parser]
-   :end-before: [end retryable-stage-parser]
+   :start-after: [start include-in-docs-examples-parser]
+   :end-before: [end include-in-docs-examples-parser]
    :emphasize-lines: 13-14
    :caption: ``example/ex_6_creating_retryable_stages.py``
 
@@ -367,8 +367,8 @@ above, but you have the flexibility to :ref:`extend the behavior
 .. literalinclude:: ../../example/ex_7_customizing_the_summary.py
    :language: python
    :linenos:
-   :start-after: [start customizing-the-summary]
-   :end-before: [end customizing-the-summary]
+   :start-after: [start include-in-docs-examples]
+   :end-before: [end include-in-docs-examples]
    :emphasize-lines: 6-9
    :caption: ``example/ex_7_customizing_the_summary.py``
 

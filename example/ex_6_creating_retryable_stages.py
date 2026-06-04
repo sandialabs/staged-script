@@ -19,7 +19,7 @@ from staged_script import RetryStage, StagedScript
 
 
 class MyScript(StagedScript):
-    # [start retryable-stage-init]
+    # [start include-in-docs-examples-init]
     def __init__(
         self,
         stages: set[str],
@@ -35,14 +35,14 @@ class MyScript(StagedScript):
             print_commands=print_commands,
         )
         self.num_times_flaky_run = 0
-    # [end retryable-stage-init]
+    # [end include-in-docs-examples-init]
 
     @StagedScript.stage("hello", "Greeting the user")
     def say_hello(self) -> None:
         self.run("echo 'Hello World'", shell=True)
         self.console.log(f"Processing file:  {self.args.some_file}")
 
-    # [start retryable-stage-body]
+    # [start include-in-docs-examples-body]
     @StagedScript.stage("flaky", "Trying an error-prone operation")
     def try_error_prone_operation(self) -> None:
         self.num_times_flaky_run += 1
@@ -53,7 +53,7 @@ class MyScript(StagedScript):
             raise RetryStage
         self.console.log("[green]Thank goodness, everything worked this time.")
         self.script_success = True
-    # [end retryable-stage-body]
+    # [end include-in-docs-examples-body]
 
     @StagedScript.stage("goodbye", "Bidding farewell")
     def say_goodbye(self) -> None:
@@ -62,7 +62,7 @@ class MyScript(StagedScript):
             "Some flag was " + ("not " if not self.flag else "") + "set!"
         )
 
-    # [start retryable-stage-parser]
+    # [start include-in-docs-examples-parser]
     @functools.cached_property
     def parser(self) -> ArgumentParser:
         my_parser = super().parser
@@ -91,7 +91,7 @@ class MyScript(StagedScript):
             help="Some flag your users can toggle on if they like.",
         )
         return my_parser
-    # [end retryable-stage-parser]
+    # [end include-in-docs-examples-parser]
 
     def parse_args(self, argv: list[str]) -> None:
         # The base class saves the parsed arguments as `self.args`.

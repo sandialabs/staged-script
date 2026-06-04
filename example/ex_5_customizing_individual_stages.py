@@ -92,7 +92,7 @@ class MyScript(StagedScript):
             "Checking to make sure all is well after running the stage..."
         )
 
-    # [start customizing-individual-stages]
+    # [start include-in-docs-examples]
     def _begin_stage_hello(self, heading: str) -> None:
         # You can use whatever `_begin_stage()` method already exists,
         # either whatever's been overridden or extended in the current
@@ -111,7 +111,7 @@ class MyScript(StagedScript):
         # You can also override things completely by omitting any `self`
         # or `super()` calls to the default method for the corresponding
         # phase, if you like.
-    # [end customizing-individual-stages]
+    # [end include-in-docs-examples]
 
     def main(self, argv: list[str]) -> None:
         self.parse_args(argv)

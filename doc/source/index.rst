@@ -99,8 +99,8 @@ Once the package is installed, you can simply
 .. literalinclude:: ../../example/ex_0_the_basics.py
    :language: python
    :linenos:
-   :start-after: [start the-basics]
-   :end-before: [end the-basics]
+   :start-after: [start include-in-docs-examples]
+   :end-before: [end include-in-docs-examples]
    :caption: ``example/ex_0_the_basics.py``
 
 Executing the script then yields
