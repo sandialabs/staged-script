@@ -24,6 +24,7 @@ class MyScript(StagedScript):
     def say_goodbye(self) -> None:
         self.run("echo 'Goodbye World'", shell=True)
 
+    # [start running-stages-by-default]
     @functools.cached_property
     def parser(self) -> ArgumentParser:
         my_parser = super().parser
@@ -40,6 +41,7 @@ class MyScript(StagedScript):
         self.goodbye_retry_timeout_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
         my_parser.set_defaults(stage=list(self.stages))
         return my_parser
+    # [end running-stages-by-default]
 
     def main(self, argv: list[str]) -> None:
         self.parse_args(argv)

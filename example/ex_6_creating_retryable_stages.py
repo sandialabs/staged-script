@@ -19,6 +19,7 @@ from staged_script import RetryStage, StagedScript
 
 
 class MyScript(StagedScript):
+    # [start retryable-stage-init]
     def __init__(
         self,
         stages: set[str],
@@ -34,12 +35,14 @@ class MyScript(StagedScript):
             print_commands=print_commands,
         )
         self.num_times_flaky_run = 0
+    # [end retryable-stage-init]
 
     @StagedScript.stage("hello", "Greeting the user")
     def say_hello(self) -> None:
         self.run("echo 'Hello World'", shell=True)
         self.console.log(f"Processing file:  {self.args.some_file}")
 
+    # [start retryable-stage-body]
     @StagedScript.stage("flaky", "Trying an error-prone operation")
     def try_error_prone_operation(self) -> None:
         self.num_times_flaky_run += 1
@@ -50,6 +53,7 @@ class MyScript(StagedScript):
             raise RetryStage
         self.console.log("[green]Thank goodness, everything worked this time.")
         self.script_success = True
+    # [end retryable-stage-body]
 
     @StagedScript.stage("goodbye", "Bidding farewell")
     def say_goodbye(self) -> None:
@@ -58,6 +62,7 @@ class MyScript(StagedScript):
             "Some flag was " + ("not " if not self.flag else "") + "set!"
         )
 
+    # [start retryable-stage-parser]
     @functools.cached_property
     def parser(self) -> ArgumentParser:
         my_parser = super().parser
@@ -86,6 +91,7 @@ class MyScript(StagedScript):
             help="Some flag your users can toggle on if they like.",
         )
         return my_parser
+    # [end retryable-stage-parser]
 
     def parse_args(self, argv: list[str]) -> None:
         # The base class saves the parsed arguments as `self.args`.

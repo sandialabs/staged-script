@@ -99,7 +99,8 @@ Once the package is installed, you can simply
 .. literalinclude:: ../../example/ex_0_the_basics.py
    :language: python
    :linenos:
-   :lines: 10-
+   :start-after: [start the-basics]
+   :end-before: [end the-basics]
    :caption: ``example/ex_0_the_basics.py``
 
 Executing the script then yields

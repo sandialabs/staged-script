@@ -144,6 +144,7 @@ class MyScript(StagedScript):
         # or `super()` calls to the default method for the corresponding
         # phase, if you like.
 
+    # [start customizing-the-summary]
     def print_script_execution_summary(
         self,
         extra_sections: dict[str, str] | None = None,
@@ -157,6 +158,7 @@ class MyScript(StagedScript):
         if extra_sections is not None:
             extras |= extra_sections
         super().print_script_execution_summary(extra_sections=extras)
+    # [end customizing-the-summary]
 
     def main(self, argv: list[str]) -> None:
         self.parse_args(argv)
