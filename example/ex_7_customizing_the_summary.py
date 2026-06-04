@@ -158,6 +158,7 @@ class MyScript(StagedScript):
         if extra_sections is not None:
             extras |= extra_sections
         super().print_script_execution_summary(extra_sections=extras)
+
     # [end include-in-docs-examples]
 
     def main(self, argv: list[str]) -> None:

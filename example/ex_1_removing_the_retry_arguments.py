@@ -38,6 +38,7 @@ class MyScript(StagedScript):
         self.goodbye_retry_delay_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
         self.goodbye_retry_timeout_arg.help = argparse.SUPPRESS  # type: ignore[attr-defined]
         return my_parser
+
     # [end include-in-docs-examples]
 
     def main(self, argv: list[str]) -> None:

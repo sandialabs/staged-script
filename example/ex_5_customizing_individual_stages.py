@@ -111,6 +111,7 @@ class MyScript(StagedScript):
         # You can also override things completely by omitting any `self`
         # or `super()` calls to the default method for the corresponding
         # phase, if you like.
+
     # [end include-in-docs-examples]
 
     def main(self, argv: list[str]) -> None:

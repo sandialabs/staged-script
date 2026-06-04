@@ -92,6 +92,7 @@ class MyScript(StagedScript):
         self.console.log(
             "Checking to make sure all is well after running the stage..."
         )
+
     # [end include-in-docs-examples]
 
     def main(self, argv: list[str]) -> None:

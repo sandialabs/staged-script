@@ -35,6 +35,7 @@ class MyScript(StagedScript):
             print_commands=print_commands,
         )
         self.num_times_flaky_run = 0
+
     # [end include-in-docs-examples-init]
 
     @StagedScript.stage("hello", "Greeting the user")
@@ -53,6 +54,7 @@ class MyScript(StagedScript):
             raise RetryStage
         self.console.log("[green]Thank goodness, everything worked this time.")
         self.script_success = True
+
     # [end include-in-docs-examples-body]
 
     @StagedScript.stage("goodbye", "Bidding farewell")
@@ -91,6 +93,7 @@ class MyScript(StagedScript):
             help="Some flag your users can toggle on if they like.",
         )
         return my_parser
+
     # [end include-in-docs-examples-parser]
 
     def parse_args(self, argv: list[str]) -> None:

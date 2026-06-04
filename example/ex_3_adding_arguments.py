@@ -29,6 +29,7 @@ class MyScript(StagedScript):
         self.console.log(
             "Some flag was " + ("not " if not self.flag else "") + "set!"
         )
+
     # [end include-in-docs-examples-stage-usage]
 
     # [start include-in-docs-examples-parser]
@@ -58,6 +59,7 @@ class MyScript(StagedScript):
             help="Some flag your users can toggle on if they like.",
         )
         return my_parser
+
     # [end include-in-docs-examples-parser]
 
     # [start include-in-docs-examples-parse-args]
@@ -73,6 +75,7 @@ class MyScript(StagedScript):
         # arguments, whether you save them as instance attributes or
         # not.
         self.args.some_file = self.args.some_file.resolve()
+
     # [end include-in-docs-examples-parse-args]
 
     def main(self, argv: list[str]) -> None:
