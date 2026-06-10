@@ -7,6 +7,7 @@
 
 # SPDX-License-Identifier: BSD-3-Clause
 
+# [start include-in-docs-examples]
 import sys
 
 from staged_script import StagedScript
@@ -33,3 +34,4 @@ class MyScript(StagedScript):
 if __name__ == "__main__":
     my_script = MyScript({"hello", "goodbye"})
     my_script.main(sys.argv[1:])
+# [end include-in-docs-examples]

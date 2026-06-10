@@ -17,6 +17,7 @@ from staged_script import StagedScript
 
 
 class MyScript(StagedScript):
+    # [start include-in-docs-examples-stage-usage]
     @StagedScript.stage("hello", "Greeting the user")
     def say_hello(self) -> None:
         self.run("echo 'Hello World'", shell=True)
@@ -29,6 +30,9 @@ class MyScript(StagedScript):
             "Some flag was " + ("not " if not self.flag else "") + "set!"
         )
 
+    # [end include-in-docs-examples-stage-usage]
+
+    # [start include-in-docs-examples-parser]
     @functools.cached_property
     def parser(self) -> ArgumentParser:
         my_parser = super().parser
@@ -56,6 +60,9 @@ class MyScript(StagedScript):
         )
         return my_parser
 
+    # [end include-in-docs-examples-parser]
+
+    # [start include-in-docs-examples-parse-args]
     def parse_args(self, argv: list[str]) -> None:
         # The base class saves the parsed arguments as `self.args`.
         super().parse_args(argv)
@@ -68,6 +75,8 @@ class MyScript(StagedScript):
         # arguments, whether you save them as instance attributes or
         # not.
         self.args.some_file = self.args.some_file.resolve()
+
+    # [end include-in-docs-examples-parse-args]
 
     def main(self, argv: list[str]) -> None:
         self.parse_args(argv)

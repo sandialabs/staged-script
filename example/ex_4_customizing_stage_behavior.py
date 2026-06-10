@@ -69,6 +69,7 @@ class MyScript(StagedScript):
         # not.
         self.args.some_file = self.args.some_file.resolve()
 
+    # [start include-in-docs-examples]
     def _run_pre_stage_actions(self) -> None:
         # You can extend the default implementation by calling it via
         # `super()` first.
@@ -91,6 +92,8 @@ class MyScript(StagedScript):
         self.console.log(
             "Checking to make sure all is well after running the stage..."
         )
+
+    # [end include-in-docs-examples]
 
     def main(self, argv: list[str]) -> None:
         self.parse_args(argv)
