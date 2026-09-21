@@ -14,8 +14,8 @@ and functions.
 from .staged_script import (
     HelpFormatter,
     RetryStage,
-    StageDuration,
     StagedScript,
+    StageDuration,
 )
 
 __all__ = [
