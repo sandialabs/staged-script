@@ -49,7 +49,6 @@ from staged_script import StagedScript
 
 
 class MyScript(StagedScript):
-
     @StagedScript.stage("hello", "Greeting the user")
     def say_hello(self) -> None:
         self.run("echo 'Hello World'", shell=True)
